@@ -1,1 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
 
+  <div class="min-h-screen flex flex-col">
+    <header class="bg-blue-700 text-white shadow-md px-6 py-4 flex justify-between items-center">
+      <h1 class="text-xl font-bold tracking-tight">Sistema de Análisis y Control de Bienios (Est. 963)</h1>
+      <span class="text-sm bg-blue-800 px-3 py-1 rounded-full text-blue-200">v2.0 Web App</span>
+    </header>
+
+    <main class="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
+      
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <h2 class="text-lg font-semibold mb-3 text-gray-700">Cargar Datos del Personal</h2>
+        <p class="text-sm text-gray-500 mb-4">Sube el archivo Excel (.xlsx o .xls) con el historial contractual para procesar de forma masiva los bienios netos.</p>
+        
+        <div class="flex items-center space-x-4">
+          <input type="file" id="inputExcel" accept=".xlsx, .xls" 
+                 class="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-gray-300 rounded-md p-1 w-full max-w-md"/>
+          <button onclick="procesarExcel()" id="btnProcesar" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-md transition shadow-sm disabled:opacity-50">
+            Analizar Datos
+          </button>
+        </div>
+      </div>
+
+      <div id="loader" class="hidden flex flex-col items-center justify-center py-12">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-3"></div>
+        <p class="text-gray-600 text-sm font-medium">Consultando matriz en Drive y ejecutando líneas de tiempo...</p>
+      </div>
+
+      <div id="panelResultados" class="hidden space-y-4">
+        <div class="flex justify-between items-center">
+          <h2 class="text-xl font-bold text-gray-800">Resultados Consolidados</h2>
+          <input type="text" id="buscador" onkeyup="filtrarTabla()" placeholder="Buscar por Funcionario..." class="border border-gray-300 rounded-md px-3 py-1.5 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+        </div>
+
+        <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 text-left text-sm" id="tablaDatos">
+              <thead class="bg-gray-100 text-gray-700 uppercase text-xs font-semibold tracking-wider">
+                <tr>
+                  <th class="px-6 py-3.5">Funcionario / ID</th>
+                  <th class="px-6 py-3.5 text-center">Bienios Netos</th>
+                  <th class="px-6 py-3.5 text-center">Contrato Vigente</th>
+                  <th class="px-6 py-3.5">Continuidad Desde</th>
+                  <th class="px-6 py-3.5">Último Cambio Grado</th>
+                  <th class="px-6 py-3.5">Próx. Reconocimiento</th>
+                  <th class="px-6 py-3.5">Tiempo Faltante</th>
+                  <th class="px-6 py-3.5 max-w-xs">Bitácora / Observaciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 bg-white text-gray-600" id="cuerpoTabla">
+                </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    let datosAnalizadosGlobal = [];
+
+    function procesarExcel() {
+      const input = document.getElementById('inputExcel');
+      if (!input.files || input.files.length === 0) {
+        alert("Por favor, selecciona un archivo de Excel primero.");
+        return;
+      }
+
+      const file = input.files[0];
+      const reader = new FileReader();
+
+      // Mostrar Cargando
+      document.getElementById('loader').classList.remove('hidden');
+      document.getElementById('panelResultados').classList.add('hidden');
+      document.getElementById('btnProcesar').disabled = true;
+
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const nombreHoja = workbook.SheetNames[0];
+        const hoja = workbook.Sheets[nombreHoja];
+        
+        // Convertir hoja a formato matriz (array de arrays) sin procesar fechas crudas directamente
+        const filasJson = XLSX.utils.sheet_to_json(hoja, { header: 1, raw: false });
+
+        if(filasJson.length <= 1) {
+          alert("El archivo cargado no contiene filas de datos válidas.");
+          ocultarLoader();
+          return;
+        }
+
+        // Llamar de forma asíncrona al Backend en Google Apps Script
+        google.script.run
+          .withSuccessHandler(mostrarResultados)
+          .withFailureHandler(manejarError)
+          .procesarDatosDashboard(filasJson);
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
+
+    function mostrarResultados(resultados) {
+      ocultarLoader();
+      datosAnalizadosGlobal = resultados;
+      
+      const cuerpo = document.getElementById('cuerpoTabla');
+      cuerpo.innerHTML = "";
+
+      if(resultados.length === 0) {
+        cuerpo.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-gray-400">No se encontraron registros vigentes para el Establecimiento 963 en el archivo.</td></tr>`;
+        document.getElementById('panelResultados').classList.remove('hidden');
+        return;
+      }
+
+      resultados.forEach(func => {
+        const claseVigente = func.vigente === "SÍ" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
+        
+        const filaHtml = `
+          <tr class="hover:bg-gray-50 transition">
+            <td class="px-6 py-4 font-semibold text-gray-900">${func.id}</td>
+            <td class="px-6 py-4 text-center font-bold text-blue-600 text-base">${func.bienios}</td>
+            <td class="px-6 py-4 text-center">
+              <span class="px-2.5 py-1 text-xs font-semibold rounded-full ${claseVigente}">${func.vigente}</span>
+            </td>
+            <td class="px-6 py-4">${func.continuidad}</td>
+            <td class="px-6 py-4">${func.cambioGrado}</td>
+            <td class="px-6 py-4 font-medium text-gray-800">${func.reconocimiento}</td>
+            <td class="px-6 py-4 text-gray-500 font-mono text-xs">${func.faltante}</td>
+            <td class="px-6 py-4 text-xs text-gray-400 max-w-xs truncate title="${func.bitacora}">${func.bitacora}</td>
+          </tr>
+        `;
+        cuerpo.innerHTML += filaHtml;
+      });
+
+      document.getElementById('panelResultados').classList.remove('hidden');
+    }
+
+    function filtrarTabla() {
+      const termino = document.getElementById('buscador').value.toLowerCase();
+      const filas = document.getElementById('cuerpoTabla').getElementsByTagName('tr');
+
+      for (let i = 0; i < filas.length; i++) {
+        const celdaId = filas[i].getElementsByTagName('td')[0];
+        if (celdaId) {
+          const textoId = celdaId.textContent || celdaId.innerText;
+          if (textoId.toLowerCase().indexOf(termino) > -1) {
+            filas[i].style.display = "";
+          } else {
+            filas[i].style.display = "none";
+          }
+        }
+      }
+    }
+
+    function ocultarLoader() {
+      document.getElementById('loader').classList.add('hidden');
+      document.getElementById('btnProcesar').disabled = false;
+    }
+
+    function manejarError(error) {
+      ocultarLoader();
+      alert("Error crítico del sistema: " + error.message);
+    }
+  </script>
+
+</body>
+</html>
