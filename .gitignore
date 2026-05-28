@@ -1,1 +1,33 @@
+# === CREDENCIALES Y CONFIGURACIÓN LOCAL ===
+# Si usas 'clasp' (la herramienta de Google para sincronizar localmente), 
+# este archivo guarda el ID de tu script personal. No se debe compartir.
+.clasp.json
+# Archivos de claves o tokens de Google Cloud Platform
+creds.json
+secrets.json
+.env
 
+# === DEPENDENCIAS DE NODE (Si usas herramientas de desarrollo) ===
+# Nunca subas esta carpeta; es gigantesca y se regenera con 'npm install'
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# === ARCHIVOS DEL SISTEMA OPERATIVO ===
+# Archivos basura que crean Windows y Mac automáticamente en las carpetas
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# === CONFIGURACIÓN DE TU EDITOR DE CÓDIGO ===
+# Evita subir las preferencias de tu editor (Visual Studio Code, WebStorm, etc.)
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
