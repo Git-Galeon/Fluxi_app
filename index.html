@@ -2,83 +2,473 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fluxi Finanzas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Fluxi - Finanzas</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
+  
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-900 text-slate-100 min-h-screen pb-12">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <main class="max-w-md mx-auto p-4 space-y-6">
+  <style>
+    /* Ocultar barra de scroll para un look más limpio de App */
+    ::-webkit-scrollbar { width: 0px; background: transparent; }
+    /* Animación suave para los modales */
+    .modal-slide-up { animation: slideUp 0.3s ease-out forwards; }
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body class="bg-black text-slate-100 h-screen w-screen overflow-hidden flex justify-center">
+
+  <!-- CONTENEDOR PRINCIPAL TIPO CELULAR -->
+  <div class="w-full max-w-md h-full bg-slate-900 flex flex-col relative shadow-2xl overflow-hidden">
     
-    <header class="flex justify-between items-center py-2">
-      <h1 class="text-3xl font-extrabold tracking-tight text-emerald-400">Fluxi.</h1>
-      <span id="status" class="text-xs bg-slate-800 text-slate-400 px-3 py-1 rounded-full">Sincronizado</span>
+    <!-- HEADER -->
+    <header class="flex-none flex justify-between items-center p-5 pt-6 bg-slate-900">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-bolt text-emerald-400 text-2xl"></i>
+        <h1 class="text-2xl font-extrabold tracking-tight text-white">Fluxi</h1>
+      </div>
+      <span id="status" class="text-[10px] uppercase tracking-wider font-bold bg-slate-800 text-emerald-400 px-3 py-1.5 rounded-full flex items-center gap-1">
+        <i class="fa-solid fa-wifi"></i> En línea
+      </span>
     </header>
 
-    <section class="bg-slate-800 p-5 rounded-2xl shadow-xl space-y-3">
-      <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tu Dinero Real</h2>
-      <div class="flex justify-between items-baseline">
-        <span class="text-sm text-slate-300">Saldo Neto Real:</span>
-        <span id="dashNeto" class="text-2xl font-black text-emerald-400">$0</span>
+    <!-- ÁREA DE CONTENIDO (Pestañas) -->
+    <main class="flex-1 overflow-y-auto pb-24 px-5">
+      
+      <!-- VISTA 1: DASHBOARD -->
+      <section id="view-dashboard" class="space-y-6">
+        <!-- Tarjeta Principal -->
+        <div class="bg-gradient-to-br from-slate-800 to-slate-800/50 p-6 rounded-3xl border border-slate-700/50 shadow-lg relative overflow-hidden">
+          <div class="absolute -right-6 -top-6 text-slate-700/30">
+            <i class="fa-solid fa-wallet text-9xl"></i>
+          </div>
+          <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 relative z-10">Saldo Neto Real</h2>
+          <div class="flex items-baseline gap-1 relative z-10">
+            <span id="dashNeto" class="text-4xl font-black text-emerald-400">$0</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-2 relative z-10"><i class="fa-solid fa-circle-info"></i> Libre de deudas de TC actuales</p>
+        </div>
+
+        <!-- Indicadores Secundarios -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700/50 text-center">
+            <h3 class="text-[10px] font-bold text-slate-400 uppercase mb-1">Deuda TC (CLP)</h3>
+            <span id="dashDeudaCLP" class="text-lg font-bold text-red-400">$0</span>
+          </div>
+          <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700/50 text-center">
+            <h3 class="text-[10px] font-bold text-slate-400 uppercase mb-1">Deuda TC (USD)</h3>
+            <span id="dashDeudaUSD" class="text-lg font-bold text-red-400">US$ 0</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- VISTA 2: CUENTAS -->
+      <section id="view-cuentas" class="hidden space-y-4">
+        <div class="flex justify-between items-center mb-2">
+          <h2 class="text-lg font-bold text-white">Mis Billeteras</h2>
+          <button onclick="openModal('modal-cuenta')" class="text-emerald-400 text-sm font-bold bg-slate-800 px-3 py-1 rounded-full hover:bg-slate-700 transition">
+            + Añadir
+          </button>
+        </div>
+        <!-- Lista de Cuentas (Se llena dinámicamente) -->
+        <div id="lista-cuentas" class="space-y-3">
+          <p class="text-sm text-slate-500 text-center py-4">Sincronizando cuentas...</p>
+        </div>
+      </section>
+
+      <!-- VISTA 3: AJUSTES -->
+      <section id="view-ajustes" class="hidden space-y-4">
+        <h2 class="text-lg font-bold text-white mb-2">Configuración</h2>
+        <div class="bg-slate-800 rounded-2xl border border-slate-700/50 overflow-hidden">
+          <button class="w-full text-left p-4 border-b border-slate-700 flex justify-between items-center hover:bg-slate-700/50">
+            <span><i class="fa-solid fa-arrows-rotate w-6 text-slate-400"></i> Forzar Sincronización</span>
+            <i class="fa-solid fa-chevron-right text-slate-500"></i>
+          </button>
+          <button class="w-full text-left p-4 border-b border-slate-700 flex justify-between items-center hover:bg-slate-700/50">
+            <span><i class="fa-solid fa-file-excel w-6 text-slate-400"></i> Ir a Google Sheets</span>
+            <i class="fa-solid fa-arrow-up-right-from-square text-slate-500"></i>
+          </button>
+          <button class="w-full text-left p-4 flex justify-between items-center hover:bg-slate-700/50">
+            <span><i class="fa-solid fa-circle-question w-6 text-slate-400"></i> Ayuda y Soporte</span>
+            <i class="fa-solid fa-chevron-right text-slate-500"></i>
+          </button>
+        </div>
+        <p class="text-center text-xs text-slate-500 mt-4">Fluxi App v1.0.0</p>
+      </section>
+
+    </main>
+
+    <!-- NAVEGACIÓN INFERIOR & BOTÓN FLOTANTE -->
+    <nav class="flex-none h-16 bg-slate-800/90 backdrop-blur-md border-t border-slate-700/50 flex justify-between items-center px-6 relative z-40">
+      <!-- Botón Inicio -->
+      <button onclick="switchTab('dashboard')" id="tab-dashboard" class="text-emerald-400 flex flex-col items-center gap-1 w-12 transition-colors">
+        <i class="fa-solid fa-chart-pie text-xl"></i>
+        <span class="text-[9px] font-bold">Inicio</span>
+      </button>
+
+      <!-- Botón Flotante Central (FAB) -->
+      <div class="absolute left-1/2 -translate-x-1/2 -top-6">
+        <button onclick="openModal('modal-movimiento')" class="bg-emerald-500 hover:bg-emerald-400 text-white w-14 h-14 rounded-full flex items-center justify-center text-2xl shadow-lg shadow-emerald-500/40 transition-transform hover:scale-105 active:scale-95">
+          <i class="fa-solid fa-plus"></i>
+        </button>
       </div>
-    </section>
 
-    <section class="bg-slate-800 p-5 rounded-2xl shadow-xl space-y-4">
-      <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Registrar Gasto o Ingreso</h2>
-      <form id="movForm" class="space-y-3 text-slate-900">
-        <input type="text" id="movDesc" placeholder="Descripción (Ej: Uber, Lider)" class="w-full p-3 rounded-xl bg-slate-100 font-medium" required>
-        <input type="number" id="movMonto" placeholder="Monto" class="w-full p-3 rounded-xl bg-slate-100 font-medium" required>
+      <!-- Botón Cuentas -->
+      <button onclick="switchTab('cuentas')" id="tab-cuentas" class="text-slate-500 hover:text-slate-300 flex flex-col items-center gap-1 w-12 transition-colors mr-12">
+        <i class="fa-solid fa-wallet text-xl"></i>
+        <span class="text-[9px] font-bold">Cuentas</span>
+      </button>
+
+      <!-- Botón Ajustes -->
+      <button onclick="switchTab('ajustes')" id="tab-ajustes" class="text-slate-500 hover:text-slate-300 flex flex-col items-center gap-1 w-12 transition-colors">
+        <i class="fa-solid fa-gear text-xl"></i>
+        <span class="text-[9px] font-bold">Ajustes</span>
+      </button>
+    </nav>
+
+
+    <!-- ========================================== -->
+    <!-- MODALES (Formularios a pantalla completa)  -->
+    <!-- ========================================== -->
+
+    <!-- MODAL: NUEVO MOVIMIENTO -->
+    <div id="modal-movimiento" class="hidden absolute inset-0 bg-slate-900 z-50 flex flex-col modal-slide-up">
+      <header class="flex justify-between items-center p-5 border-b border-slate-800">
+        <h2 class="text-lg font-bold text-white">Nuevo Movimiento</h2>
+        <button onclick="closeModal('modal-movimiento')" class="w-8 h-8 bg-slate-800 rounded-full flex justify-center items-center text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </header>
+      
+      <form id="movForm" class="flex-1 overflow-y-auto p-5 space-y-4">
         
-        <div class="grid grid-cols-2 gap-2">
-          <select id="movCuenta" class="p-3 rounded-xl bg-slate-100 font-medium"></select>
-          <select id="movMoneda" class="p-3 rounded-xl bg-slate-100 font-medium">
-            <option value="CLP">CLP</option>
-            <option value="USD">USD</option>
+        <!-- Tabs Ingreso/Egreso -->
+        <div class="flex p-1 bg-slate-800 rounded-lg mb-4">
+          <button type="button" onclick="setTipoMov('Egreso')" id="btn-egreso" class="flex-1 py-2 text-sm font-bold bg-slate-700 text-white rounded-md shadow">Gasto</button>
+          <button type="button" onclick="setTipoMov('Ingreso')" id="btn-ingreso" class="flex-1 py-2 text-sm font-bold text-slate-400 hover:text-white rounded-md">Ingreso</button>
+          <button type="button" onclick="setTipoMov('Transferencia')" id="btn-transfer" class="flex-1 py-2 text-sm font-bold text-slate-400 hover:text-white rounded-md">Transfer</button>
+        </div>
+        <input type="hidden" id="movTipo" value="Egreso">
+
+        <div>
+          <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Monto</label>
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl font-bold">$</span>
+            <input type="number" id="movMonto" class="w-full pl-10 p-4 rounded-xl bg-slate-800 border border-slate-700 text-white text-2xl font-bold focus:outline-none focus:border-emerald-500" placeholder="0" required>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Descripción</label>
+          <input type="text" id="movDesc" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500" placeholder="Ej: Supermercado, Sueldo..." required>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Billetera / Cuenta</label>
+            <select id="movCuenta" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500"></select>
+          </div>
+          <div>
+            <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Moneda</label>
+            <select id="movMoneda" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+              <option value="CLP">CLP</option>
+              <option value="USD">USD</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Categoría</label>
+          <select id="movCat" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+            <option value="Alimentacion">Alimentación</option>
+            <option value="Transporte">Transporte</option>
+            <option value="Cuentas Fijas">Cuentas Básicas</option>
+            <option value="Ocio">Ocio y Entretención</option>
+            <option value="Salud">Salud</option>
+            <option value="Ahorro">Ahorro / Inversión</option>
+            <option value="Ingreso">Ingreso / Sueldo</option>
           </select>
         </div>
 
-        <select id="movCat" class="w-full p-3 rounded-xl bg-slate-100 font-medium">
-          <option value="Alimentacion">Alimentacion</option>
-          <option value="Cuentas Fijas">Cuentas Fijas</option>
-          <option value="Ocio">Ocio</option>
-          <option value="Transporte">Transporte</option>
-        </select>
-
-        <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold p-4 rounded-xl transition shadow-lg shadow-emerald-900/30">
-          Guardar Movimiento
+        <button type="submit" class="w-full bg-emerald-500 text-white font-bold text-lg p-4 rounded-xl mt-4 hover:bg-emerald-400 transition shadow-lg shadow-emerald-500/20">
+          Guardar
         </button>
       </form>
-    </section>
+    </div>
 
-    <section class="bg-slate-800/60 p-5 rounded-2xl border border-slate-700/50 space-y-4">
-      <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Configurar Nueva Cuenta</h2>
-      <form id="cuentaForm" class="space-y-3 text-slate-900">
-        <input type="text" id="accId" placeholder="ID (Ej: TC_02_CLP)" class="w-full p-3 rounded-xl bg-slate-100 text-sm" required>
-        <input type="text" id="accName" placeholder="Nombre (Ej: Santander LATAM)" class="w-full p-3 rounded-xl bg-slate-100 text-sm" required>
+    <!-- MODAL: NUEVA CUENTA -->
+    <div id="modal-cuenta" class="hidden absolute inset-0 bg-slate-900 z-50 flex flex-col modal-slide-up">
+      <header class="flex justify-between items-center p-5 border-b border-slate-800">
+        <h2 class="text-lg font-bold text-white">Nueva Billetera</h2>
+        <button onclick="closeModal('modal-cuenta')" class="w-8 h-8 bg-slate-800 rounded-full flex justify-center items-center text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </header>
+      
+      <form id="cuentaForm" class="flex-1 overflow-y-auto p-5 space-y-4">
         
-        <div class="grid grid-cols-2 gap-2">
-          <select id="accType" class="p-3 rounded-xl bg-slate-100 text-sm">
-            <option value="Debito">Debito</option>
-            <option value="Credito">Credito</option>
-          </select>
-          <select id="accCurrency" class="p-3 rounded-xl bg-slate-100 text-sm">
-            <option value="CLP">CLP</option>
-            <option value="USD">USD</option>
-          </select>
+        <p class="text-xs text-emerald-400 bg-emerald-400/10 p-3 rounded-lg border border-emerald-400/20 mb-4">
+          <i class="fa-solid fa-robot"></i> El ID de la cuenta se generará automáticamente para evitar errores en la base de datos.
+        </p>
+
+        <div>
+          <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Nombre de la Cuenta</label>
+          <input type="text" id="accName" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500" placeholder="Ej: CuentaRUT, CMR Pesos..." required>
         </div>
-        
-        <input type="number" id="accLimit" placeholder="Cupo Total (Solo si es Crédito)" class="w-full p-3 rounded-xl bg-slate-100 text-sm">
-        
-        <button type="submit" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-medium p-3 rounded-xl transition">
-          + Agregar Cuenta a la Base
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Tipo</label>
+            <select id="accType" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+              <option value="Debito">Débito</option>
+              <option value="Credito">Crédito</option>
+              <option value="Inversion">Inversión</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Moneda</label>
+            <select id="accCurrency" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+              <option value="CLP">CLP</option>
+              <option value="USD">USD</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Saldo Inicial (o Cupo Total si es TC)</label>
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
+            <input type="number" id="accLimit" class="w-full pl-8 p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500" placeholder="0" required>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Día Corte (TC)</label>
+            <input type="number" id="accCorte" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white" placeholder="Ej: 20">
+          </div>
+          <div>
+            <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Día Pago (TC)</label>
+            <input type="number" id="accPago" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white" placeholder="Ej: 5">
+          </div>
+        </div>
+
+        <button type="submit" class="w-full bg-slate-700 text-white font-bold text-lg p-4 rounded-xl mt-4 hover:bg-slate-600 transition">
+          Crear Billetera
         </button>
       </form>
-    </section>
+    </div>
 
-  </main>
+  </div> <!-- FIN CONTENEDOR PRINCIPAL -->
 
-  <script src="app.js"></script>
+  <!-- ========================================== -->
+  <!-- LÓGICA JAVASCRIPT                          -->
+  <!-- ========================================== -->
+  <script>
+    // ⚠️ REEMPLAZA ESTA URL CON TU WEB APP DE GOOGLE SCRIPT
+    const API_URL = "https://script.google.com/macros/s/TU_DEPL_ID_AQUÍ/exec"; 
+    const TOKEN = "MiClaveSecreta123";
+
+    const formatMoneda = (valor) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(valor || 0);
+
+    // --- MANEJO DE PESTAÑAS ---
+    function switchTab(tabId) {
+      // Ocultar todas las vistas
+      document.getElementById('view-dashboard').classList.add('hidden');
+      document.getElementById('view-cuentas').classList.add('hidden');
+      document.getElementById('view-ajustes').classList.add('hidden');
+      
+      // Mostrar la vista seleccionada
+      document.getElementById(`view-${tabId}`).classList.remove('hidden');
+
+      // Resetear colores de botones
+      ['dashboard', 'cuentas', 'ajustes'].forEach(id => {
+        const btn = document.getElementById(`tab-${id}`);
+        btn.classList.remove('text-emerald-400');
+        btn.classList.add('text-slate-500');
+      });
+
+      // Activar color del botón seleccionado
+      const activeBtn = document.getElementById(`tab-${tabId}`);
+      activeBtn.classList.remove('text-slate-500');
+      activeBtn.classList.add('text-emerald-400');
+    }
+
+    // --- MANEJO DE MODALES ---
+    function openModal(modalId) {
+      document.getElementById(modalId).classList.remove('hidden');
+    }
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.add('hidden');
+    }
+
+    // --- ESTILOS TIPO MOVIMIENTO (Ingreso/Egreso) ---
+    function setTipoMov(tipo) {
+      document.getElementById('movTipo').value = tipo;
+      
+      const btnEgreso = document.getElementById('btn-egreso');
+      const btnIngreso = document.getElementById('btn-ingreso');
+      const btnTransfer = document.getElementById('btn-transfer');
+      
+      // Reset estilos
+      [btnEgreso, btnIngreso, btnTransfer].forEach(btn => {
+        btn.className = "flex-1 py-2 text-sm font-bold text-slate-400 hover:text-white rounded-md";
+      });
+
+      // Aplicar estilo activo
+      if(tipo === 'Egreso') btnEgreso.className = "flex-1 py-2 text-sm font-bold bg-slate-700 text-white rounded-md shadow";
+      if(tipo === 'Ingreso') btnIngreso.className = "flex-1 py-2 text-sm font-bold bg-slate-700 text-white rounded-md shadow";
+      if(tipo === 'Transferencia') btnTransfer.className = "flex-1 py-2 text-sm font-bold bg-slate-700 text-white rounded-md shadow";
+    }
+
+    // --- CARGA DE DATOS AL INICIAR ---
+    document.addEventListener("DOMContentLoaded", () => {
+      cargarDashboard();
+      cargarCuentas();
+    });
+
+    async function cargarDashboard() {
+      try {
+        const res = await fetch(`${API_URL}?action=getDashboard`);
+        if(!res.ok) return;
+        const data = await res.json();
+        
+        // Ajusta estos nombres según los que pusiste en la Columna A de DASHBOARD_APP
+        if(data["Saldo_Neto_Real"]) document.getElementById("dashNeto").innerText = formatMoneda(data["Saldo_Neto_Real"]);
+        if(data["Deuda_TC_CLP"]) document.getElementById("dashDeudaCLP").innerText = formatMoneda(data["Deuda_TC_CLP"]);
+        if(data["Deuda_TC_USD"]) document.getElementById("dashDeudaUSD").innerText = "US$ " + (data["Deuda_TC_USD"] || 0);
+        
+      } catch (err) { console.log("Modo visualización (API no conectada)"); }
+    }
+
+    async function cargarCuentas() {
+      try {
+        const res = await fetch(`${API_URL}?action=getCuentas`);
+        if(!res.ok) return;
+        const cuentas = await res.json();
+        
+        // Llenar Select de Movimientos
+        const select = document.getElementById("movCuenta");
+        select.innerHTML = "";
+        
+        // Llenar Lista de vista Cuentas
+        const listaDiv = document.getElementById("lista-cuentas");
+        listaDiv.innerHTML = "";
+
+        cuentas.forEach(c => {
+          // Llenar Select
+          let opt = document.createElement("option");
+          opt.value = c.ID_Cuenta;
+          opt.innerText = c.Nombre;
+          select.appendChild(opt);
+
+          // Crear Tarjeta en la Pestaña Cuentas
+          const icon = c.Tipo === 'Credito' ? 'fa-credit-card' : 'fa-building-columns';
+          const badgeColor = c.Tipo === 'Credito' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-emerald-500/20 text-emerald-400';
+          
+          listaDiv.innerHTML += `
+            <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700/50 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-slate-300">
+                  <i class="fa-solid ${icon}"></i>
+                </div>
+                <div>
+                  <h3 class="font-bold text-white text-sm">${c.Nombre}</h3>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${badgeColor}">${c.Tipo}</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="block text-sm font-bold ${c.Saldo_Actual < 0 ? 'text-red-400' : 'text-emerald-400'}">
+                  ${c.Moneda === 'USD' ? 'US$' : ''} ${formatMoneda(c.Saldo_Actual).replace('$', '')}
+                </span>
+                <span class="text-[10px] text-slate-500">Saldo/Cupo</span>
+              </div>
+            </div>
+          `;
+        });
+      } catch (err) { 
+        document.getElementById("lista-cuentas").innerHTML = "<p class='text-sm text-slate-500 text-center py-4'>Agrega tu API_URL en el código para ver las cuentas.</p>";
+      }
+    }
+
+    // --- FORMULARIO NUEVO MOVIMIENTO ---
+    document.getElementById("movForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      document.getElementById("status").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando`;
+      
+      const payload = {
+        action: "addMovimiento",
+        secret_token: TOKEN,
+        ID_Mov: Date.now(),
+        Fecha: new Date().toLocaleDateString('es-CL'),
+        Descripcion: document.getElementById("movDesc").value,
+        Cuenta_Origen: document.getElementById("movCuenta").value,
+        Categoria: document.getElementById("movCat").value,
+        Tipo_Mov: document.getElementById("movTipo").value,
+        Monto: Number(document.getElementById("movMonto").value),
+        Moneda: document.getElementById("movMoneda").value
+      };
+
+      await enviarAGoogle(payload);
+      document.getElementById("movForm").reset();
+      closeModal('modal-movimiento');
+      cargarDashboard();
+    });
+
+    // --- FORMULARIO NUEVA CUENTA (CON ID AUTOMÁTICO) ---
+    document.getElementById("cuentaForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      document.getElementById("status").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando`;
+      
+      const tipoCuenta = document.getElementById("accType").value;
+      const cupoOLimit = Number(document.getElementById("accLimit").value) || 0;
+      
+      // GENERACIÓN AUTOMÁTICA DEL ID (Ej: CTA_170123456789)
+      const idGenerado = "CTA_" + Date.now();
+
+      const payload = {
+        action: "addCuenta",
+        secret_token: TOKEN,
+        ID_Cuenta: idGenerado,
+        Nombre: document.getElementById("accName").value,
+        Tipo: tipoCuenta,
+        Cupo_Total: tipoCuenta === 'Credito' ? cupoOLimit : "",
+        Moneda: document.getElementById("accCurrency").value,
+        Dia_Corte: document.getElementById("accCorte").value || "",
+        Dia_Pago: document.getElementById("accPago").value || "",
+        Saldo_Inicial: tipoCuenta === 'Credito' ? 0 : cupoOLimit
+      };
+
+      await enviarAGoogle(payload);
+      document.getElementById("cuentaForm").reset();
+      closeModal('modal-cuenta');
+      cargarCuentas();
+    });
+
+    // --- FUNCIÓN DE ENVÍO CENTRAL ---
+    async function enviarAGoogle(payload) {
+      try {
+        await fetch(API_URL, {
+          method: "POST",
+          mode: "no-cors", 
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        document.getElementById("status").innerHTML = `<i class="fa-solid fa-check"></i> Listo`;
+        setTimeout(() => document.getElementById("status").innerHTML = `<i class="fa-solid fa-wifi"></i> En línea`, 2000);
+      } catch (err) {
+        document.getElementById("status").innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-400"></i> Error`;
+        console.error(err);
+      }
+    }
+  </script>
 </body>
 </html>
