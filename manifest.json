@@ -1,10 +1,10 @@
 {
-  "name": "Neto Control Financiero",
+  "name": "Neto Finanzas Personales",
   "short_name": "Neto",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#0f172a",
-  "theme-color": "#1e293b",
+  "theme_color": "#0f172a",
   "orientation": "portrait",
   "icons": [
     {
