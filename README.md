@@ -1,1 +1,1 @@
-# calculo-bienios-app
+# Bitacora y calculadora de finanzas personales
