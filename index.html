@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -14,171 +15,204 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
-    /* Ocultar barra de scroll para un look más limpio de App */
+    /* Desactivar scroll global y comportamientos táctiles molestos */
+    body {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* Ocultar barra de scroll para un look de app nativa */
     ::-webkit-scrollbar { width: 0px; background: transparent; }
-    /* Animación suave para los modales */
-    .modal-slide-up { animation: slideUp 0.3s ease-out forwards; }
-    @keyframes slideUp {
-      from { transform: translateY(100%); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+    
+    /* Animaciones fluidas para modales */
+    .modal-slide-up {
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+    }
+    .modal-hidden {
+      transform: translateY(100%);
+      opacity: 0;
+      pointer-events: none;
+    }
+    .modal-visible {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
     }
   </style>
 </head>
 <body class="bg-black text-slate-100 h-screen w-screen overflow-hidden flex justify-center">
 
-  <!-- CONTENEDOR PRINCIPAL TIPO CELULAR -->
+  <!-- CONTENEDOR PRINCIPAL TIPO DISPOSITIVO MÓVIL -->
   <div class="w-full max-w-md h-full bg-slate-900 flex flex-col relative shadow-2xl overflow-hidden">
     
-    <!-- HEADER -->
-    <header class="flex-none flex justify-between items-center p-5 pt-6 bg-slate-900">
+    <!-- CABECERA DE LA APP -->
+    <header class="flex-none flex justify-between items-center p-5 pt-6 bg-slate-900 z-10">
       <div class="flex items-center gap-2">
-        <i class="fa-solid fa-bolt text-emerald-400 text-2xl"></i>
-        <h1 class="text-2xl font-extrabold tracking-tight text-white">Fluxi</h1>
+        <div class="bg-emerald-500/10 p-2 rounded-xl border border-emerald-500/20">
+          <i class="fa-solid fa-bolt text-emerald-400 text-xl"></i>
+        </div>
+        <h1 class="text-2xl font-black tracking-tight text-white">Fluxi</h1>
       </div>
-      <span id="status" class="text-[10px] uppercase tracking-wider font-bold bg-slate-800 text-emerald-400 px-3 py-1.5 rounded-full flex items-center gap-1">
+      <span id="status" class="text-[10px] uppercase tracking-wider font-extrabold bg-slate-800 text-emerald-400 px-3 py-1.5 rounded-full flex items-center gap-1.5">
         <i class="fa-solid fa-wifi"></i> En línea
       </span>
     </header>
 
-    <!-- ÁREA DE CONTENIDO (Pestañas) -->
-    <main class="flex-1 overflow-y-auto pb-24 px-5">
+    <!-- ÁREA DE CONTENIDO PRINCIPAL (Con scroll interno controlado) -->
+    <main class="flex-1 overflow-y-auto pb-32 px-5">
       
-      <!-- VISTA 1: DASHBOARD -->
+      <!-- SECCIÓN A: DASHBOARD -->
       <section id="view-dashboard" class="space-y-6">
-        <!-- Tarjeta Principal -->
-        <div class="bg-gradient-to-br from-slate-800 to-slate-800/50 p-6 rounded-3xl border border-slate-700/50 shadow-lg relative overflow-hidden">
-          <div class="absolute -right-6 -top-6 text-slate-700/30">
+        <!-- Tarjeta de Saldo Neto -->
+        <div class="bg-gradient-to-br from-slate-800 to-slate-800/40 p-6 rounded-3xl border border-slate-700/40 shadow-xl relative overflow-hidden">
+          <div class="absolute -right-8 -top-8 text-slate-700/20">
             <i class="fa-solid fa-wallet text-9xl"></i>
           </div>
-          <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 relative z-10">Saldo Neto Real</h2>
+          <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 relative z-10">Saldo Neto Real</h2>
           <div class="flex items-baseline gap-1 relative z-10">
             <span id="dashNeto" class="text-4xl font-black text-emerald-400">$0</span>
           </div>
-          <p class="text-xs text-slate-500 mt-2 relative z-10"><i class="fa-solid fa-circle-info"></i> Libre de deudas de TC actuales</p>
+          <p class="text-xs text-slate-500 mt-3 relative z-10 flex items-center gap-1.5">
+            <i class="fa-solid fa-shield-halved text-emerald-500"></i> Descontadas las deudas actuales de TC
+          </p>
         </div>
 
-        <!-- Indicadores Secundarios -->
+        <!-- Indicadores de Tarjetas de Crédito -->
         <div class="grid grid-cols-2 gap-4">
-          <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700/50 text-center">
-            <h3 class="text-[10px] font-bold text-slate-400 uppercase mb-1">Deuda TC (CLP)</h3>
-            <span id="dashDeudaCLP" class="text-lg font-bold text-red-400">$0</span>
+          <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/40 text-center">
+            <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Deuda TC (CLP)</h3>
+            <span id="dashDeudaCLP" class="text-lg font-black text-red-400">$0</span>
           </div>
-          <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700/50 text-center">
-            <h3 class="text-[10px] font-bold text-slate-400 uppercase mb-1">Deuda TC (USD)</h3>
-            <span id="dashDeudaUSD" class="text-lg font-bold text-red-400">US$ 0</span>
+          <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/40 text-center">
+            <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Deuda TC (USD)</h3>
+            <span id="dashDeudaUSD" class="text-lg font-black text-red-400">US$ 0</span>
           </div>
         </div>
       </section>
 
-      <!-- VISTA 2: CUENTAS -->
+      <!-- SECCIÓN B: CUENTAS -->
       <section id="view-cuentas" class="hidden space-y-4">
         <div class="flex justify-between items-center mb-2">
-          <h2 class="text-lg font-bold text-white">Mis Billeteras</h2>
-          <button onclick="openModal('modal-cuenta')" class="text-emerald-400 text-sm font-bold bg-slate-800 px-3 py-1 rounded-full hover:bg-slate-700 transition">
-            + Añadir
+          <h2 class="text-lg font-extrabold text-white">Mis Billeteras</h2>
+          <button onclick="triggerOpenModal('modal-cuenta')" class="text-emerald-400 text-xs font-bold bg-slate-800 border border-slate-700/50 px-3.5 py-2 rounded-full hover:bg-slate-700 transition">
+            <i class="fa-solid fa-plus mr-1"></i> Añadir
           </button>
         </div>
-        <!-- Lista de Cuentas (Se llena dinámicamente) -->
+        <!-- Listado Dinámico de Cuentas -->
         <div id="lista-cuentas" class="space-y-3">
-          <p class="text-sm text-slate-500 text-center py-4">Sincronizando cuentas...</p>
+          <p class="text-sm text-slate-500 text-center py-8">Sincronizando cuentas con tu Drive...</p>
         </div>
       </section>
 
-      <!-- VISTA 3: AJUSTES -->
-      <section id="view-ajustes" class="hidden space-y-4">
-        <h2 class="text-lg font-bold text-white mb-2">Configuración</h2>
-        <div class="bg-slate-800 rounded-2xl border border-slate-700/50 overflow-hidden">
-          <button class="w-full text-left p-4 border-b border-slate-700 flex justify-between items-center hover:bg-slate-700/50">
-            <span><i class="fa-solid fa-arrows-rotate w-6 text-slate-400"></i> Forzar Sincronización</span>
-            <i class="fa-solid fa-chevron-right text-slate-500"></i>
-          </button>
-          <button class="w-full text-left p-4 border-b border-slate-700 flex justify-between items-center hover:bg-slate-700/50">
-            <span><i class="fa-solid fa-file-excel w-6 text-slate-400"></i> Ir a Google Sheets</span>
-            <i class="fa-solid fa-arrow-up-right-from-square text-slate-500"></i>
-          </button>
-          <button class="w-full text-left p-4 flex justify-between items-center hover:bg-slate-700/50">
-            <span><i class="fa-solid fa-circle-question w-6 text-slate-400"></i> Ayuda y Soporte</span>
-            <i class="fa-solid fa-chevron-right text-slate-500"></i>
-          </button>
+      <!-- SECCIÓN C: CONFIGURACIÓN -->
+      <section id="view-ajustes" class="hidden space-y-6">
+        <div>
+          <h2 class="text-lg font-extrabold text-white mb-3">Accesos Directos</h2>
+          <div class="bg-slate-800/60 rounded-2xl border border-slate-700/40 overflow-hidden">
+            <button onclick="forzarSincronizacion()" class="w-full text-left p-4 border-b border-slate-700/40 flex justify-between items-center hover:bg-slate-800 transition">
+              <span class="flex items-center gap-3"><i class="fa-solid fa-arrows-rotate text-emerald-400"></i> Forzar Sincronización</span>
+              <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
+            </button>
+            <a href="https://docs.google.com/spreadsheets/d/1QWY_Tox9FkGQk1HB8wdaDjxpuH4zHiLJh7G_2cRxTc4" target="_blank" class="w-full text-left p-4 border-b border-slate-700/40 flex justify-between items-center hover:bg-slate-800 transition block">
+              <span class="flex items-center gap-3"><i class="fa-solid fa-file-excel text-emerald-400"></i> Ir a Google Sheets</span>
+              <i class="fa-solid fa-arrow-up-right-from-square text-slate-500 text-xs"></i>
+            </a>
+            <button class="w-full text-left p-4 flex justify-between items-center hover:bg-slate-800 transition">
+              <span class="flex items-center gap-3"><i class="fa-solid fa-circle-question text-slate-400"></i> Ayuda y Soporte</span>
+              <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
+            </button>
+          </div>
         </div>
-        <p class="text-center text-xs text-slate-500 mt-4">Fluxi App v1.0.0</p>
+
+        <!-- CONFIGURACIÓN DE PERSONALIZACIÓN -->
+        <div>
+          <h2 class="text-lg font-extrabold text-white mb-3">Diseño e Interfaz</h2>
+          <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/40 space-y-3">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Posición del Botón "+"</span>
+            <div class="grid grid-cols-3 gap-2 p-1 bg-slate-900 rounded-xl border border-slate-800">
+              <button onclick="setFabPosition('left')" id="btn-fab-left" class="py-2.5 rounded-lg text-xs font-bold transition">Izquierda</button>
+              <button onclick="setFabPosition('center')" id="btn-fab-center" class="py-2.5 rounded-lg text-xs font-bold transition">Centro</button>
+              <button onclick="setFabPosition('right')" id="btn-fab-right" class="py-2.5 rounded-lg text-xs font-bold transition">Derecha</button>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-center text-[10px] text-slate-600">Fluxi App v1.1.0 • Desarrollado a Medida</p>
       </section>
 
     </main>
 
-    <!-- NAVEGACIÓN INFERIOR & BOTÓN FLOTANTE -->
-    <nav class="flex-none h-16 bg-slate-800/90 backdrop-blur-md border-t border-slate-700/50 flex justify-between items-center px-6 relative z-40">
-      <!-- Botón Inicio -->
-      <button onclick="switchTab('dashboard')" id="tab-dashboard" class="text-emerald-400 flex flex-col items-center gap-1 w-12 transition-colors">
-        <i class="fa-solid fa-chart-pie text-xl"></i>
+    <!-- BOTÓN FLOTANTE REGISTRO (FAB) -->
+    <div id="fab-container" class="absolute bottom-20 z-40 transition-all duration-300">
+      <button onclick="triggerOpenModal('modal-movimiento')" class="bg-emerald-500 hover:bg-emerald-400 text-white w-14 h-14 rounded-full flex items-center justify-center text-2xl shadow-xl shadow-emerald-500/30 transition-transform active:scale-90">
+        <i class="fa-solid fa-plus"></i>
+      </button>
+    </div>
+
+    <!-- BARRA DE NAVEGACIÓN INFERIOR (Estilo nativo) -->
+    <nav class="flex-none h-16 bg-slate-800/90 backdrop-blur-md border-t border-slate-700/35 grid grid-cols-3 items-center relative z-30">
+      <!-- Tab Inicio -->
+      <button onclick="switchTab('dashboard')" id="tab-dashboard" class="text-emerald-400 flex flex-col items-center justify-center h-full gap-1 transition-colors">
+        <i class="fa-solid fa-chart-pie text-lg"></i>
         <span class="text-[9px] font-bold">Inicio</span>
       </button>
 
-      <!-- Botón Flotante Central (FAB) -->
-      <div class="absolute left-1/2 -translate-x-1/2 -top-6">
-        <button onclick="openModal('modal-movimiento')" class="bg-emerald-500 hover:bg-emerald-400 text-white w-14 h-14 rounded-full flex items-center justify-center text-2xl shadow-lg shadow-emerald-500/40 transition-transform hover:scale-105 active:scale-95">
-          <i class="fa-solid fa-plus"></i>
-        </button>
-      </div>
-
-      <!-- Botón Cuentas -->
-      <button onclick="switchTab('cuentas')" id="tab-cuentas" class="text-slate-500 hover:text-slate-300 flex flex-col items-center gap-1 w-12 transition-colors mr-12">
-        <i class="fa-solid fa-wallet text-xl"></i>
+      <!-- Tab Cuentas -->
+      <button onclick="switchTab('cuentas')" id="tab-cuentas" class="text-slate-500 hover:text-slate-300 flex flex-col items-center justify-center h-full gap-1 transition-colors">
+        <i class="fa-solid fa-wallet text-lg"></i>
         <span class="text-[9px] font-bold">Cuentas</span>
       </button>
 
-      <!-- Botón Ajustes -->
-      <button onclick="switchTab('ajustes')" id="tab-ajustes" class="text-slate-500 hover:text-slate-300 flex flex-col items-center gap-1 w-12 transition-colors">
-        <i class="fa-solid fa-gear text-xl"></i>
+      <!-- Tab Ajustes -->
+      <button onclick="switchTab('ajustes')" id="tab-ajustes" class="text-slate-500 hover:text-slate-300 flex flex-col items-center justify-center h-full gap-1 transition-colors">
+        <i class="fa-solid fa-sliders text-lg"></i>
         <span class="text-[9px] font-bold">Ajustes</span>
       </button>
     </nav>
 
 
-    <!-- ========================================== -->
-    <!-- MODALES (Formularios a pantalla completa)  -->
-    <!-- ========================================== -->
+    <!-- ============================================== -->
+    <!-- MODALES DE FLUJO COMPLETOS (Atrás controlado)   -->
+    <!-- ============================================== -->
 
-    <!-- MODAL: NUEVO MOVIMIENTO -->
-    <div id="modal-movimiento" class="hidden absolute inset-0 bg-slate-900 z-50 flex flex-col modal-slide-up">
+    <!-- MODAL: REGISTRAR MOVIMIENTO -->
+    <div id="modal-movimiento" class="hidden absolute inset-0 bg-slate-900 z-50 flex flex-col modal-slide-up modal-hidden">
       <header class="flex justify-between items-center p-5 border-b border-slate-800">
         <h2 class="text-lg font-bold text-white">Nuevo Movimiento</h2>
-        <button onclick="closeModal('modal-movimiento')" class="w-8 h-8 bg-slate-800 rounded-full flex justify-center items-center text-slate-400 hover:text-white">
+        <button type="button" onclick="triggerCloseModal('modal-movimiento')" class="w-8 h-8 bg-slate-800 rounded-full flex justify-center items-center text-slate-400 hover:text-white">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </header>
       
       <form id="movForm" class="flex-1 overflow-y-auto p-5 space-y-4">
-        
-        <!-- Tabs Ingreso/Egreso -->
-        <div class="flex p-1 bg-slate-800 rounded-lg mb-4">
-          <button type="button" onclick="setTipoMov('Egreso')" id="btn-egreso" class="flex-1 py-2 text-sm font-bold bg-slate-700 text-white rounded-md shadow">Gasto</button>
-          <button type="button" onclick="setTipoMov('Ingreso')" id="btn-ingreso" class="flex-1 py-2 text-sm font-bold text-slate-400 hover:text-white rounded-md">Ingreso</button>
-          <button type="button" onclick="setTipoMov('Transferencia')" id="btn-transfer" class="flex-1 py-2 text-sm font-bold text-slate-400 hover:text-white rounded-md">Transfer</button>
+        <!-- Selector Tipo de Flujo -->
+        <div class="flex p-1 bg-slate-800 rounded-lg mb-2 border border-slate-700/30">
+          <button type="button" onclick="setTipoMov('Egreso')" id="btn-egreso" class="flex-1 py-2 text-xs font-bold bg-slate-700 text-white rounded-md shadow">Gasto</button>
+          <button type="button" onclick="setTipoMov('Ingreso')" id="btn-ingreso" class="flex-1 py-2 text-xs font-bold text-slate-400 hover:text-white rounded-md">Ingreso</button>
+          <button type="button" onclick="setTipoMov('Transferencia')" id="btn-transfer" class="flex-1 py-2 text-xs font-bold text-slate-400 hover:text-white rounded-md">Transferencia</button>
         </div>
         <input type="hidden" id="movTipo" value="Egreso">
 
         <div>
-          <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Monto</label>
+          <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Monto</label>
           <div class="relative">
             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl font-bold">$</span>
-            <input type="number" id="movMonto" class="w-full pl-10 p-4 rounded-xl bg-slate-800 border border-slate-700 text-white text-2xl font-bold focus:outline-none focus:border-emerald-500" placeholder="0" required>
+            <input type="number" id="movMonto" class="w-full pl-10 p-4 rounded-xl bg-slate-800 border border-slate-700 text-white text-xl font-bold focus:outline-none focus:border-emerald-500" placeholder="0" required>
           </div>
         </div>
 
         <div>
-          <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Descripción</label>
-          <input type="text" id="movDesc" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500" placeholder="Ej: Supermercado, Sueldo..." required>
+          <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Descripción</label>
+          <input type="text" id="movDesc" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium" placeholder="Ej: Supermercado Lider, Cine..." required>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Billetera / Cuenta</label>
-            <select id="movCuenta" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500"></select>
+            <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Billetera / Cuenta</label>
+            <select id="movCuenta" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium"></select>
           </div>
           <div>
-            <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Moneda</label>
-            <select id="movMoneda" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+            <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Moneda</label>
+            <select id="movMoneda" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium">
               <option value="CLP">CLP</option>
               <option value="USD">USD</option>
             </select>
@@ -186,56 +220,55 @@
         </div>
 
         <div>
-          <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Categoría</label>
-          <select id="movCat" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+          <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Categoría</label>
+          <select id="movCat" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium">
             <option value="Alimentacion">Alimentación</option>
             <option value="Transporte">Transporte</option>
             <option value="Cuentas Fijas">Cuentas Básicas</option>
             <option value="Ocio">Ocio y Entretención</option>
             <option value="Salud">Salud</option>
             <option value="Ahorro">Ahorro / Inversión</option>
-            <option value="Ingreso">Ingreso / Sueldo</option>
+            <option value="Otros">Otros Egreso</option>
           </select>
         </div>
 
-        <button type="submit" class="w-full bg-emerald-500 text-white font-bold text-lg p-4 rounded-xl mt-4 hover:bg-emerald-400 transition shadow-lg shadow-emerald-500/20">
-          Guardar
+        <button type="submit" class="w-full bg-emerald-500 text-white font-black text-sm uppercase tracking-wider p-4 rounded-xl mt-4 hover:bg-emerald-400 transition shadow-lg shadow-emerald-500/20">
+          Confirmar Transacción
         </button>
       </form>
     </div>
 
-    <!-- MODAL: NUEVA CUENTA -->
-    <div id="modal-cuenta" class="hidden absolute inset-0 bg-slate-900 z-50 flex flex-col modal-slide-up">
+    <!-- MODAL: CONFIGURAR NUEVA BILLETERA -->
+    <div id="modal-cuenta" class="hidden absolute inset-0 bg-slate-900 z-50 flex flex-col modal-slide-up modal-hidden">
       <header class="flex justify-between items-center p-5 border-b border-slate-800">
         <h2 class="text-lg font-bold text-white">Nueva Billetera</h2>
-        <button onclick="closeModal('modal-cuenta')" class="w-8 h-8 bg-slate-800 rounded-full flex justify-center items-center text-slate-400 hover:text-white">
+        <button type="button" onclick="triggerCloseModal('modal-cuenta')" class="w-8 h-8 bg-slate-800 rounded-full flex justify-center items-center text-slate-400 hover:text-white">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </header>
       
       <form id="cuentaForm" class="flex-1 overflow-y-auto p-5 space-y-4">
-        
-        <p class="text-xs text-emerald-400 bg-emerald-400/10 p-3 rounded-lg border border-emerald-400/20 mb-4">
-          <i class="fa-solid fa-robot"></i> El ID de la cuenta se generará automáticamente para evitar errores en la base de datos.
+        <p class="text-[10px] leading-relaxed text-emerald-400 bg-emerald-400/5 p-3 rounded-xl border border-emerald-400/10 mb-2">
+          <i class="fa-solid fa-circle-check"></i> El identificador de base de datos se asigna de forma automática para prevenir colisiones de datos.
         </p>
 
         <div>
-          <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Nombre de la Cuenta</label>
-          <input type="text" id="accName" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500" placeholder="Ej: CuentaRUT, CMR Pesos..." required>
+          <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Nombre de la Cuenta</label>
+          <input type="text" id="accName" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium" placeholder="Ej: Cuenta Corriente Bci, CMR Falabella" required>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Tipo</label>
-            <select id="accType" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+            <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Tipo</label>
+            <select id="accType" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium">
               <option value="Debito">Débito</option>
               <option value="Credito">Crédito</option>
               <option value="Inversion">Inversión</option>
             </select>
           </div>
           <div>
-            <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Moneda</label>
-            <select id="accCurrency" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+            <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Moneda Base</label>
+            <select id="accCurrency" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium">
               <option value="CLP">CLP</option>
               <option value="USD">USD</option>
             </select>
@@ -243,74 +276,202 @@
         </div>
 
         <div>
-          <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Saldo Inicial (o Cupo Total si es TC)</label>
+          <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Saldo Inicial (o Cupo en TC)</label>
           <div class="relative">
             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
-            <input type="number" id="accLimit" class="w-full pl-8 p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500" placeholder="0" required>
+            <input type="number" id="accLimit" class="w-full pl-8 p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium" placeholder="0" required>
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Día Corte (TC)</label>
-            <input type="number" id="accCorte" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white" placeholder="Ej: 20">
+            <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Día Corte (Solo TC)</label>
+            <input type="number" id="accCorte" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm" placeholder="Ej: 20">
           </div>
           <div>
-            <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Día Pago (TC)</label>
-            <input type="number" id="accPago" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white" placeholder="Ej: 5">
+            <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Día Pago (Solo TC)</label>
+            <input type="number" id="accPago" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm" placeholder="Ej: 5">
           </div>
         </div>
 
-        <button type="submit" class="w-full bg-slate-700 text-white font-bold text-lg p-4 rounded-xl mt-4 hover:bg-slate-600 transition">
-          Crear Billetera
+        <button type="submit" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-extrabold text-sm uppercase tracking-wider p-4 rounded-xl mt-4 transition">
+          Habilitar Billetera
         </button>
       </form>
     </div>
 
   </div> <!-- FIN CONTENEDOR PRINCIPAL -->
 
-  <!-- ========================================== -->
-  <!-- LÓGICA JAVASCRIPT                          -->
-  <!-- ========================================== -->
+
+  <!-- ============================================== -->
+  <!-- CONTROLADOR JAVASCRIPT DE ALTO RENDIMIENTO    -->
+  <!-- ============================================== -->
   <script>
-    // ⚠️ REEMPLAZA ESTA URL CON TU WEB APP DE GOOGLE SCRIPT
-    const API_URL = "https://script.google.com/macros/s/AKfycbw2JzkGCOgkxldJWBThQWtqRN1278MwgW8M4FHSXdg8BOAmzyjnXc2hy3dMQBbHrd8o/exec"; 
+    // Configuración Base de Conexión a Drive
+    const API_URL = "https://script.google.com/macros/s/1QWY_Tox9FkGQk1HB8wdaDjxpuH4zHiLJh7G_2cRxTc4/exec"; // Reemplazar con ID de publicación final
     const TOKEN = "MiClaveSecreta123";
+
+    // Variables de Estado Interno
+    let currentTab = 'dashboard';
+    let openModals = [];
 
     const formatMoneda = (valor) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(valor || 0);
 
-    // --- MANEJO DE PESTAÑAS ---
+    // --- ARRANQUE E HISTORIAL NATIVO (BOTÓN ATRÁS) ---
+    document.addEventListener("DOMContentLoaded", () => {
+      // Registrar estado inicial en la historia del navegador
+      history.replaceState({ tab: 'dashboard', openModals: [] }, '');
+
+      // Escuchar el evento de retroceso del teléfono
+      window.onpopstate = function (event) {
+        if (event.state) {
+          // 1. Resolver Modales abiertos
+          const targetModals = event.state.openModals || [];
+          
+          // Cerrar los modales que ya no deberían estar abiertos
+          openModals.forEach(modalId => {
+            if (!targetModals.includes(modalId)) {
+              execCloseModal(modalId);
+            }
+          });
+          
+          // Abrir los que sí correspondan según el historial
+          targetModals.forEach(modalId => {
+            if (!openModals.includes(modalId)) {
+              execOpenModal(modalId);
+            }
+          });
+          
+          openModals = [...targetModals];
+
+          // 2. Resolver Pestaña activa
+          if (event.state.tab && event.state.tab !== currentTab) {
+            execSwitchTab(event.state.tab);
+          }
+        } else {
+          // Por defecto, volver al Dashboard principal sin ventanas activas
+          openModals.forEach(id => execCloseModal(id));
+          openModals = [];
+          execSwitchTab('dashboard');
+        }
+      };
+
+      // Inicializar Interfaz
+      initFABPosition();
+      cargarDashboard();
+      cargarCuentas();
+    });
+
+    // --- SISTEMA DE GESTIÓN DE PESTAÑAS (SPA) ---
     function switchTab(tabId) {
-      // Ocultar todas las vistas
+      if (tabId === currentTab) return;
+      
+      // Registrar el cambio de pestaña en el historial nativo
+      history.pushState({ tab: tabId, openModals: [...openModals] }, '');
+      execSwitchTab(tabId);
+    }
+
+    function execSwitchTab(tabId) {
+      // Ocultar las vistas activas
       document.getElementById('view-dashboard').classList.add('hidden');
       document.getElementById('view-cuentas').classList.add('hidden');
       document.getElementById('view-ajustes').classList.add('hidden');
       
-      // Mostrar la vista seleccionada
+      // Mostrar la vista que se solicita
       document.getElementById(`view-${tabId}`).classList.remove('hidden');
 
-      // Resetear colores de botones
+      // Restaurar colores de la barra de navegación
       ['dashboard', 'cuentas', 'ajustes'].forEach(id => {
         const btn = document.getElementById(`tab-${id}`);
         btn.classList.remove('text-emerald-400');
         btn.classList.add('text-slate-500');
       });
 
-      // Activar color del botón seleccionado
+      // Iluminar icono seleccionado
       const activeBtn = document.getElementById(`tab-${tabId}`);
       activeBtn.classList.remove('text-slate-500');
       activeBtn.classList.add('text-emerald-400');
+      
+      currentTab = tabId;
     }
 
-    // --- MANEJO DE MODALES ---
-    function openModal(modalId) {
-      document.getElementById(modalId).classList.remove('hidden');
-    }
-    function closeModal(modalId) {
-      document.getElementById(modalId).classList.add('hidden');
+    // --- CONTROL DE VENTANAS DESPLEGABLES (MODALES) ---
+    function triggerOpenModal(modalId) {
+      execOpenModal(modalId);
+      openModals.push(modalId);
+      
+      // Empujar estado en el historial para capturar el botón de retroceso
+      history.pushState({ tab: currentTab, openModals: [...openModals] }, '');
     }
 
-    // --- ESTILOS TIPO MOVIMIENTO (Ingreso/Egreso) ---
+    function triggerCloseModal(modalId) {
+      // Al cerrar voluntariamente con el botón "X", retrocedemos en el historial
+      history.back();
+    }
+
+    function execOpenModal(modalId) {
+      const modal = document.getElementById(modalId);
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('modal-hidden');
+        modal.classList.add('modal-visible');
+      }, 10);
+    }
+
+    function execCloseModal(modalId) {
+      const modal = document.getElementById(modalId);
+      modal.classList.remove('modal-visible');
+      modal.classList.add('modal-hidden');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 250);
+    }
+
+    // --- CONFIGURACIÓN DINÁMICA DEL BOTÓN "+" (FAB) ---
+    function initFABPosition() {
+      const savedPos = localStorage.getItem('fluxi_fab_pos') || 'center';
+      setFabPosition(savedPos);
+    }
+
+    function setFabPosition(position) {
+      const fab = document.getElementById('fab-container');
+      
+      // Limpiar clases de posicionamiento de Tailwind
+      fab.classList.remove('left-6', 'right-6', 'left-1/2', '-translate-x-1/2');
+      
+      // Aplicar nueva posición seleccionada
+      if (position === 'left') {
+        fab.classList.add('left-6');
+      } else if (position === 'right') {
+        fab.classList.add('right-6');
+      } else {
+        // Centro predeterminado
+        fab.classList.add('left-1/2', '-translate-x-1/2');
+      }
+
+      // Guardar preferencia para la siguiente sesión del usuario
+      localStorage.setItem('fluxi_fab_pos', position);
+      
+      // Actualizar la botonera de Ajustes
+      ['left', 'center', 'right'].forEach(pos => {
+        const btn = document.getElementById(`btn-fab-${pos}`);
+        btn.className = "py-2.5 rounded-lg text-xs font-bold transition"; // Reset base
+        if (pos === position) {
+          btn.classList.add('bg-emerald-500', 'text-white', 'shadow-md');
+        } else {
+          btn.classList.add('text-slate-400', 'hover:text-white', 'bg-transparent');
+        }
+      });
+    }
+
+    // --- ACCIÓN DE ACTUALIZACIÓN ---
+    function forzarSincronizacion() {
+      document.getElementById("status").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando`;
+      cargarDashboard();
+      cargarCuentas();
+    }
+
+    // --- SELECCIÓN GASTO / INGRESO ---
     function setTipoMov(tipo) {
       document.getElementById('movTipo').value = tipo;
       
@@ -318,91 +479,86 @@
       const btnIngreso = document.getElementById('btn-ingreso');
       const btnTransfer = document.getElementById('btn-transfer');
       
-      // Reset estilos
       [btnEgreso, btnIngreso, btnTransfer].forEach(btn => {
-        btn.className = "flex-1 py-2 text-sm font-bold text-slate-400 hover:text-white rounded-md";
+        btn.className = "flex-1 py-2 text-xs font-bold text-slate-400 hover:text-white rounded-md transition-all";
       });
 
-      // Aplicar estilo activo
-      if(tipo === 'Egreso') btnEgreso.className = "flex-1 py-2 text-sm font-bold bg-slate-700 text-white rounded-md shadow";
-      if(tipo === 'Ingreso') btnIngreso.className = "flex-1 py-2 text-sm font-bold bg-slate-700 text-white rounded-md shadow";
-      if(tipo === 'Transferencia') btnTransfer.className = "flex-1 py-2 text-sm font-bold bg-slate-700 text-white rounded-md shadow";
+      if (tipo === 'Egreso') btnEgreso.className = "flex-1 py-2 text-xs font-bold bg-slate-700 text-white rounded-md shadow border border-slate-600/30";
+      if (tipo === 'Ingreso') btnIngreso.className = "flex-1 py-2 text-xs font-bold bg-slate-700 text-white rounded-md shadow border border-slate-600/30";
+      if (tipo === 'Transferencia') btnTransfer.className = "flex-1 py-2 text-xs font-bold bg-slate-700 text-white rounded-md shadow border border-slate-600/30";
     }
 
-    // --- CARGA DE DATOS AL INICIAR ---
-    document.addEventListener("DOMContentLoaded", () => {
-      cargarDashboard();
-      cargarCuentas();
-    });
-
+    // --- INTEGRACIÓN Y PETICIONES API CLOUD ---
     async function cargarDashboard() {
       try {
         const res = await fetch(`${API_URL}?action=getDashboard`);
-        if(!res.ok) return;
+        if (!res.ok) return;
         const data = await res.json();
         
-        // Ajusta estos nombres según los que pusiste en la Columna A de DASHBOARD_APP
-        if(data["Saldo_Neto_Real"]) document.getElementById("dashNeto").innerText = formatMoneda(data["Saldo_Neto_Real"]);
-        if(data["Deuda_TC_CLP"]) document.getElementById("dashDeudaCLP").innerText = formatMoneda(data["Deuda_TC_CLP"]);
-        if(data["Deuda_TC_USD"]) document.getElementById("dashDeudaUSD").innerText = "US$ " + (data["Deuda_TC_USD"] || 0);
-        
-      } catch (err) { console.log("Modo visualización (API no conectada)"); }
+        if (data["Saldo_Neto_Real"]) document.getElementById("dashNeto").innerText = formatMoneda(data["Saldo_Neto_Real"]);
+        if (data["Deuda_TC_CLP"]) document.getElementById("dashDeudaCLP").innerText = formatMoneda(data["Deuda_TC_CLP"]);
+        if (data["Deuda_TC_USD"]) document.getElementById("dashDeudaUSD").innerText = "US$ " + (data["Deuda_TC_USD"] || 0);
+      } catch (err) { 
+        console.log("Fluxi está corriendo en modo desarrollo o API offline."); 
+      }
     }
 
     async function cargarCuentas() {
       try {
         const res = await fetch(`${API_URL}?action=getCuentas`);
-        if(!res.ok) return;
+        if (!res.ok) return;
         const cuentas = await res.json();
         
-        // Llenar Select de Movimientos
+        // Cargar Selector de Movimientos
         const select = document.getElementById("movCuenta");
         select.innerHTML = "";
         
-        // Llenar Lista de vista Cuentas
+        // Cargar Lista de Cuentas en UI
         const listaDiv = document.getElementById("lista-cuentas");
         listaDiv.innerHTML = "";
 
         cuentas.forEach(c => {
-          // Llenar Select
           let opt = document.createElement("option");
           opt.value = c.ID_Cuenta;
           opt.innerText = c.Nombre;
           select.appendChild(opt);
 
-          // Crear Tarjeta en la Pestaña Cuentas
           const icon = c.Tipo === 'Credito' ? 'fa-credit-card' : 'fa-building-columns';
           const badgeColor = c.Tipo === 'Credito' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-emerald-500/20 text-emerald-400';
           
           listaDiv.innerHTML += `
-            <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700/50 flex items-center justify-between">
+            <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/35 flex items-center justify-between">
               <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-slate-300">
-                  <i class="fa-solid ${icon}"></i>
+                <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300">
+                  <i class="fa-solid ${icon} text-sm"></i>
                 </div>
                 <div>
-                  <h3 class="font-bold text-white text-sm">${c.Nombre}</h3>
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${badgeColor}">${c.Tipo}</span>
+                  <h3 class="font-extrabold text-white text-sm">${c.Nombre}</h3>
+                  <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${badgeColor}">${c.Tipo}</span>
                 </div>
               </div>
               <div class="text-right">
-                <span class="block text-sm font-bold ${c.Saldo_Actual < 0 ? 'text-red-400' : 'text-emerald-400'}">
+                <span class="block text-sm font-black ${c.Saldo_Actual < 0 ? 'text-red-400' : 'text-emerald-400'}">
                   ${c.Moneda === 'USD' ? 'US$' : ''} ${formatMoneda(c.Saldo_Actual).replace('$', '')}
                 </span>
-                <span class="text-[10px] text-slate-500">Saldo/Cupo</span>
+                <span class="text-[9px] text-slate-500 uppercase tracking-wider font-semibold">Balance</span>
               </div>
             </div>
           `;
         });
       } catch (err) { 
-        document.getElementById("lista-cuentas").innerHTML = "<p class='text-sm text-slate-500 text-center py-4'>Agrega tu API_URL en el código para ver las cuentas.</p>";
+        document.getElementById("lista-cuentas").innerHTML = `
+          <div class="text-center py-6 bg-slate-800/40 rounded-2xl border border-slate-800">
+            <p class="text-xs text-slate-500">Fluxi en modo offline. Revisa tu API_URL en index.html</p>
+          </div>
+        `;
       }
     }
 
-    // --- FORMULARIO NUEVO MOVIMIENTO ---
+    // --- FORMULARIO: REGISTRO DE MOVIMIENTO ---
     document.getElementById("movForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      document.getElementById("status").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando`;
+      document.getElementById("status").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enviando`;
       
       const payload = {
         action: "addMovimiento",
@@ -419,19 +575,19 @@
 
       await enviarAGoogle(payload);
       document.getElementById("movForm").reset();
-      closeModal('modal-movimiento');
+      triggerCloseModal('modal-movimiento');
       cargarDashboard();
     });
 
-    // --- FORMULARIO NUEVA CUENTA (CON ID AUTOMÁTICO) ---
+    // --- FORMULARIO: CONFIGURACIÓN DE NUEVA BILLETERA ---
     document.getElementById("cuentaForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       document.getElementById("status").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando`;
       
       const tipoCuenta = document.getElementById("accType").value;
-      const cupoOLimit = Number(document.getElementById("accLimit").value) || 0;
+      const cupoLimit = Number(document.getElementById("accLimit").value) || 0;
       
-      // GENERACIÓN AUTOMÁTICA DEL ID (Ej: CTA_170123456789)
+      // ID auto-generado único por fecha y milisegundos
       const idGenerado = "CTA_" + Date.now();
 
       const payload = {
@@ -440,20 +596,20 @@
         ID_Cuenta: idGenerado,
         Nombre: document.getElementById("accName").value,
         Tipo: tipoCuenta,
-        Cupo_Total: tipoCuenta === 'Credito' ? cupoOLimit : "",
+        Cupo_Total: tipoCuenta === 'Credito' ? cupoLimit : "",
         Moneda: document.getElementById("accCurrency").value,
         Dia_Corte: document.getElementById("accCorte").value || "",
         Dia_Pago: document.getElementById("accPago").value || "",
-        Saldo_Inicial: tipoCuenta === 'Credito' ? 0 : cupoOLimit
+        Saldo_Inicial: tipoCuenta === 'Credito' ? 0 : cupoLimit
       };
 
       await enviarAGoogle(payload);
       document.getElementById("cuentaForm").reset();
-      closeModal('modal-cuenta');
+      triggerCloseModal('modal-cuenta');
       cargarCuentas();
     });
 
-    // --- FUNCIÓN DE ENVÍO CENTRAL ---
+    // --- MOTOR DE TRANSMISIÓN DE DATOS ---
     async function enviarAGoogle(payload) {
       try {
         await fetch(API_URL, {
@@ -462,7 +618,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
-        document.getElementById("status").innerHTML = `<i class="fa-solid fa-check"></i> Listo`;
+        document.getElementById("status").innerHTML = `<i class="fa-solid fa-check"></i> Sincronizado`;
         setTimeout(() => document.getElementById("status").innerHTML = `<i class="fa-solid fa-wifi"></i> En línea`, 2000);
       } catch (err) {
         document.getElementById("status").innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-400"></i> Error`;
@@ -472,3 +628,5 @@
   </script>
 </body>
 </html>
+
+```
