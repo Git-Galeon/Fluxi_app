@@ -1,16 +1,16 @@
 {
-  "name": "Neto Finanzas Personales",
-  "short_name": "Neto",
+  "name": "Fluxi Finanzas Personales",
+  "short_name": "Fluxi",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
-  "orientation": "portrait",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/2489/2489756.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ]
 }
