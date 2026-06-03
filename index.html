@@ -1,1 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neto Finanzas</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-12">
 
+  <main class="max-w-md mx-auto p-4 space-y-6">
+    
+    <header class="flex justify-between items-center py-2">
+      <h1 class="text-3xl font-extrabold tracking-tight text-emerald-400">Neto.</h1>
+      <span id="status" class="text-xs bg-slate-800 text-slate-400 px-3 py-1 rounded-full">Sincronizado</span>
+    </header>
+
+    <section class="bg-slate-800 p-5 rounded-2xl shadow-xl space-y-3">
+      <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tu Dinero Real</h2>
+      <div class="flex justify-between items-baseline">
+        <span class="text-sm text-slate-300">Saldo Neto Real:</span>
+        <span id="dashNeto" class="text-2xl font-black text-emerald-400">$0</span>
+      </div>
+    </section>
+
+    <section class="bg-slate-800 p-5 rounded-2xl shadow-xl space-y-4">
+      <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Registrar Gasto o Ingreso</h2>
+      <form id="movForm" class="space-y-3 text-slate-900">
+        <input type="text" id="movDesc" placeholder="Descripción (Ej: Uber, Lider)" class="w-full p-3 rounded-xl bg-slate-100 font-medium" required>
+        <input type="number" id="movMonto" placeholder="Monto" class="w-full p-3 rounded-xl bg-slate-100 font-medium" required>
+        
+        <div class="grid grid-cols-2 gap-2">
+          <select id="movCuenta" class="p-3 rounded-xl bg-slate-100 font-medium"></select>
+          <select id="movMoneda" class="p-3 rounded-xl bg-slate-100 font-medium">
+            <option value="CLP">CLP</option>
+            <option value="USD">USD</option>
+          </select>
+        </div>
+
+        <select id="movCat" class="w-full p-3 rounded-xl bg-slate-100 font-medium">
+          <option value="Alimentacion">Alimentacion</option>
+          <option value="Cuentas Fijas">Cuentas Fijas</option>
+          <option value="Ocio">Ocio</option>
+          <option value="Transporte">Transporte</option>
+        </select>
+
+        <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold p-4 rounded-xl transition shadow-lg shadow-emerald-900/30">
+          Guardar Movimiento
+        </button>
+      </form>
+    </section>
+
+    <section class="bg-slate-800/60 p-5 rounded-2xl border border-slate-700/50 space-y-4">
+      <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Configurar Nueva Cuenta</h2>
+      <form id="cuentaForm" class="space-y-3 text-slate-900">
+        <input type="text" id="accId" placeholder="ID (Ej: TC_02_CLP)" class="w-full p-3 rounded-xl bg-slate-100 text-sm" required>
+        <input type="text" id="accName" placeholder="Nombre (Ej: Santander LATAM)" class="w-full p-3 rounded-xl bg-slate-100 text-sm" required>
+        
+        <div class="grid grid-cols-2 gap-2">
+          <select id="accType" class="p-3 rounded-xl bg-slate-100 text-sm">
+            <option value="Debito">Debito</option>
+            <option value="Credito">Credito</option>
+          </select>
+          <select id="accCurrency" class="p-3 rounded-xl bg-slate-100 text-sm">
+            <option value="CLP">CLP</option>
+            <option value="USD">USD</option>
+          </select>
+        </div>
+        
+        <input type="number" id="accLimit" placeholder="Cupo Total (Solo si es Crédito)" class="w-full p-3 rounded-xl bg-slate-100 text-sm">
+        
+        <button type="submit" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-medium p-3 rounded-xl transition">
+          + Agregar Cuenta a la Base
+        </button>
+      </form>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
