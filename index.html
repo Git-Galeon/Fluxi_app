@@ -11,7 +11,6 @@
   <!-- Icono para instalar en la pantalla de inicio de iPhone (iOS) -->
   <link rel="apple-touch-icon" href="icon.svg">
 
-  
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
@@ -140,7 +139,7 @@
           </div>
         </div>
 
-        <p class="text-center text-[10px] text-slate-600">Fluxi App v1.1.0 • Desarrollado a Medida</p>
+        <p class="text-center text-[10px] text-slate-600">Fluxi App v1.2.0 • Desarrollado a Medida</p>
       </section>
 
     </main>
@@ -196,6 +195,7 @@
         </div>
         <input type="hidden" id="movTipo" value="Egreso">
 
+        <!-- Fila de Monto -->
         <div>
           <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Monto</label>
           <div class="relative">
@@ -204,11 +204,30 @@
           </div>
         </div>
 
+        <!-- Fila de Descripción -->
         <div>
           <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Descripción</label>
           <input type="text" id="movDesc" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium" placeholder="Ej: Supermercado Lider, Cine..." required>
         </div>
 
+        <!-- NUEVA FILA: FECHA Y FRECUENCIA RECURRENTE -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Fecha</label>
+            <input type="date" id="movFecha" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium" required>
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Frecuencia / Recurrencia</label>
+            <select id="movFrecuencia" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium">
+              <option value="Unica vez">Única vez</option>
+              <option value="Mensual">Mensual (Recurrente)</option>
+              <option value="Quincenal">Quincenal (Recurrente)</option>
+              <option value="Semanal">Semanal (Recurrente)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Cuenta y Moneda -->
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Billetera / Cuenta</label>
@@ -223,6 +242,7 @@
           </div>
         </div>
 
+        <!-- Categoría -->
         <div>
           <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Categoría</label>
           <select id="movCat" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium">
@@ -312,7 +332,7 @@
   <!-- ============================================== -->
   <script>
     // Configuración Base de Conexión a Drive
-    const API_URL = "https://script.google.com/macros/s/AKfycbw2JzkGCOgkxldJWBThQWtqRN1278MwgW8M4FHSXdg8BOAmzyjnXc2hy3dMQBbHrd8o/exec"; // Reemplazar con ID de publicación final
+    const API_URL = "https://script.google.com/macros/s/AKfycbz5Gp8Xwe9lwtjFHOazMYucOrRvaM64hPfcGsSFNzEVUdviAeRJTt3UIPTVKREySl8o/exec"; 
     const TOKEN = "A_gam3_n0n-7&7";
 
     // Variables de Estado Interno
@@ -360,11 +380,26 @@
         }
       };
 
+      // Establecer fecha por defecto de hoy (Chile Local Time)
+      inicializarFechaHoy();
+
       // Inicializar Interfaz
       initFABPosition();
       cargarDashboard();
       cargarCuentas();
     });
+
+    // --- INICIALIZADOR DE FECHA LOCAL ---
+    function inicializarFechaHoy() {
+      const inputFecha = document.getElementById("movFecha");
+      if (inputFecha) {
+        const hoy = new Date();
+        const yyyy = hoy.getFullYear();
+        const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+        const dd = String(hoy.getDate()).padStart(2, '0');
+        inputFecha.value = `${yyyy}-${mm}-${dd}`;
+      }
+    }
 
     // --- SISTEMA DE GESTIÓN DE PESTAÑAS (SPA) ---
     function switchTab(tabId) {
@@ -437,6 +472,7 @@
       setFabPosition(savedPos);
     }
 
+    // --- POSICIÓN DEL BOTÓN FLOTANTE ---
     function setFabPosition(position) {
       const fab = document.getElementById('fab-container');
       
@@ -559,26 +595,36 @@
       }
     }
 
-    // --- FORMULARIO: REGISTRO DE MOVIMIENTO ---
+    // --- FORMULARIO: REGISTRO DE MOVIMIENTO (MODIFICADO CON FECHA Y FRECUENCIA) ---
     document.getElementById("movForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       document.getElementById("status").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enviando`;
       
+      // Parsear la fecha seleccionada del input
+      const inputFechaVal = document.getElementById("movFecha").value;
+      const partesFecha = inputFechaVal.split("-"); // YYYY-MM-DD
+      const fechaFormateada = `${partesFecha[2]}/${partesFecha[1]}/${partesFecha[0]}`; // Convertir a DD/MM/YYYY para Sheets
+
       const payload = {
         action: "addMovimiento",
         secret_token: TOKEN,
         ID_Mov: Date.now(),
-        Fecha: new Date().toLocaleDateString('es-CL'),
+        Fecha: fechaFormateada, // Envía la fecha seleccionada manualmente
         Descripcion: document.getElementById("movDesc").value,
         Cuenta_Origen: document.getElementById("movCuenta").value,
         Categoria: document.getElementById("movCat").value,
         Tipo_Mov: document.getElementById("movTipo").value,
         Monto: Number(document.getElementById("movMonto").value),
-        Moneda: document.getElementById("movMoneda").value
+        Moneda: document.getElementById("movMoneda").value,
+        Frecuencia: document.getElementById("movFrecuencia").value // Nueva variable de recurrencia
       };
 
       await enviarAGoogle(payload);
+      
+      // Resetear formulario y restaurar la fecha de hoy
       document.getElementById("movForm").reset();
+      inicializarFechaHoy();
+      
       triggerCloseModal('modal-movimiento');
       cargarDashboard();
     });
