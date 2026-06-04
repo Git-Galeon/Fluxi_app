@@ -64,7 +64,7 @@
     <main class="flex-1 overflow-y-auto pb-32 px-5">
       
       <!-- SECCIÓN A: DASHBOARD -->
-      <section id="view-dashboard" class="space-y-6">
+      <section id="view-dashboard" class="space-y-5">
         <!-- Tarjeta de Saldo Neto -->
         <div class="bg-gradient-to-br from-slate-800 to-slate-800/40 p-6 rounded-3xl border border-slate-700/40 shadow-xl relative overflow-hidden">
           <div class="absolute -right-8 -top-8 text-slate-700/20">
@@ -88,6 +88,19 @@
           <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/40 text-center">
             <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Deuda TC (USD)</h3>
             <span id="dashDeudaUSD" class="text-lg font-black text-red-400">US$ 0</span>
+          </div>
+        </div>
+
+        <!-- SECCIÓN DE ALERTAS INTELIGENTES -->
+        <div class="space-y-3">
+          <h3 class="text-xs font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-brain text-emerald-400"></i> Alertas de Inteligencia Financiera
+          </h3>
+          <div id="panel-alertas" class="space-y-2.5">
+            <!-- Cargador o tarjetas vacías por defecto -->
+            <div class="p-4 bg-slate-800/30 rounded-2xl border border-slate-800 text-center text-xs text-slate-500">
+              <i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i> Todo en orden en tus ciclos y billeteras.
+            </div>
           </div>
         </div>
       </section>
@@ -119,6 +132,10 @@
               <span class="flex items-center gap-3"><i class="fa-solid fa-file-excel text-emerald-400"></i> Ir a Google Sheets</span>
               <i class="fa-solid fa-arrow-up-right-from-square text-slate-500 text-xs"></i>
             </a>
+            <button onclick="triggerOpenModal('modal-categorias')" class="w-full text-left p-4 border-b border-slate-700/40 flex justify-between items-center hover:bg-slate-800 transition">
+              <span class="flex items-center gap-3"><i class="fa-solid fa-tags text-emerald-400"></i> Gestionar Categorías</span>
+              <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
+            </button>
             <button class="w-full text-left p-4 flex justify-between items-center hover:bg-slate-800 transition">
               <span class="flex items-center gap-3"><i class="fa-solid fa-circle-question text-slate-400"></i> Ayuda y Soporte</span>
               <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
@@ -139,7 +156,7 @@
           </div>
         </div>
 
-        <p class="text-center text-[10px] text-slate-600">Fluxi App v1.2.0 • Desarrollado a Medida</p>
+        <p class="text-center text-[10px] text-slate-600">Fluxi App v1.3.0 • Desarrollado a Medida</p>
       </section>
 
     </main>
@@ -174,7 +191,7 @@
 
 
     <!-- ============================================== -->
-    <!-- MODALES DE FLUJO COMPLETOS (Atrás controlado)   -->
+    <!-- MODALES DE FLUJO COMPLETOS                      -->
     <!-- ============================================== -->
 
     <!-- MODAL: REGISTRAR MOVIMIENTO -->
@@ -210,7 +227,7 @@
           <input type="text" id="movDesc" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium" placeholder="Ej: Supermercado Lider, Cine..." required>
         </div>
 
-        <!-- NUEVA FILA: FECHA Y FRECUENCIA RECURRENTE -->
+        <!-- FILA: FECHA Y FRECUENCIA RECURRENTE -->
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Fecha</label>
@@ -231,7 +248,7 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Billetera / Cuenta</label>
-            <select id="movCuenta" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium"></select>
+            <select id="movCuenta" onchange="verificarTipoCuenta()" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium"></select>
           </div>
           <div>
             <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Moneda</label>
@@ -242,17 +259,29 @@
           </div>
         </div>
 
+        <!-- SECCIÓN CUOTAS (DURANTE SELECCIÓN DE TC) -->
+        <div id="seccion-cuotas" class="hidden p-4 bg-slate-800/40 rounded-xl border border-slate-700/50 space-y-3">
+          <div class="flex items-center gap-2 text-emerald-400">
+            <i class="fa-solid fa-credit-card"></i>
+            <span class="text-xs font-bold uppercase tracking-wider">Opciones de Crédito</span>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider block mb-1">N° Cuotas</label>
+              <input type="number" id="movCuotas" min="1" max="48" class="w-full p-3 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs" value="1">
+            </div>
+            <div>
+              <label class="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider block mb-1">Costo de Cuota</label>
+              <div id="calculo-cuota" class="text-xs font-bold text-slate-300 pt-3">$0 / mes</div>
+            </div>
+          </div>
+        </div>
+
         <!-- Categoría -->
         <div>
           <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Categoría</label>
           <select id="movCat" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium">
-            <option value="Alimentacion">Alimentación</option>
-            <option value="Transporte">Transporte</option>
-            <option value="Cuentas Fijas">Cuentas Básicas</option>
-            <option value="Ocio">Ocio y Entretención</option>
-            <option value="Salud">Salud</option>
-            <option value="Ahorro">Ahorro / Inversión</option>
-            <option value="Otros">Otros Egreso</option>
+            <!-- Cargado de forma dinámica -->
           </select>
         </div>
 
@@ -324,6 +353,37 @@
       </form>
     </div>
 
+    <!-- MODAL: GESTIONAR CATEGORÍAS -->
+    <div id="modal-categorias" class="hidden absolute inset-0 bg-slate-900 z-50 flex flex-col modal-slide-up modal-hidden">
+      <header class="flex justify-between items-center p-5 border-b border-slate-800">
+        <h2 class="text-lg font-bold text-white">Categorías Personalizadas</h2>
+        <button type="button" onclick="triggerCloseModal('modal-categorias')" class="w-8 h-8 bg-slate-800 rounded-full flex justify-center items-center text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </header>
+      
+      <div class="flex-1 overflow-y-auto p-5 space-y-6">
+        <!-- Agregar Categoría -->
+        <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/30 space-y-3">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Crear Nueva Categoría</span>
+          <div class="flex gap-2">
+            <input type="text" id="catNuevaNombre" class="flex-1 p-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-emerald-500" placeholder="Ej: Mascotas, Regalos">
+            <button onclick="agregarNuevaCategoria()" class="bg-emerald-500 hover:bg-emerald-400 text-white px-4 rounded-xl font-bold text-sm">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Lista de Categorías actuales -->
+        <div class="space-y-3">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Tus Categorías de Fluxi</span>
+          <div id="lista-categorias-admin" class="space-y-2">
+            <!-- Se carga de forma dinámica -->
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div> <!-- FIN CONTENEDOR PRINCIPAL -->
 
 
@@ -332,12 +392,19 @@
   <!-- ============================================== -->
   <script>
     // Configuración Base de Conexión a Drive
-    const API_URL = "https://script.google.com/macros/s/AKfycbz5Gp8Xwe9lwtjFHOazMYucOrRvaM64hPfcGsSFNzEVUdviAeRJTt3UIPTVKREySl8o/exec"; 
+    const API_URL = "https://script.google.com/macros/s/AKfycbw2JzkGCOgkxldJWBThQWtqRN1278MwgW8M4FHSXdg8BOAmzyjnXc2hy3dMQBbHrd8o/exec"; 
     const TOKEN = "A_gam3_n0n-7&7";
 
     // Variables de Estado Interno
     let currentTab = 'dashboard';
     let openModals = [];
+    let cuentasGlobales = [];
+    let dashboardGlobal = {};
+
+    // Categorías Predeterminadas
+    const DEFAULT_CATEGORIES = [
+      "Alimentacion", "Transporte", "Cuentas Fijas", "Ocio", "Salud", "Ahorro", "Otros"
+    ];
 
     const formatMoneda = (valor) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(valor || 0);
 
@@ -349,17 +416,14 @@
       // Escuchar el evento de retroceso del teléfono
       window.onpopstate = function (event) {
         if (event.state) {
-          // 1. Resolver Modales abiertos
           const targetModals = event.state.openModals || [];
           
-          // Cerrar los modales que ya no deberían estar abiertos
           openModals.forEach(modalId => {
             if (!targetModals.includes(modalId)) {
               execCloseModal(modalId);
             }
           });
           
-          // Abrir los que sí correspondan según el historial
           targetModals.forEach(modalId => {
             if (!openModals.includes(modalId)) {
               execOpenModal(modalId);
@@ -368,12 +432,10 @@
           
           openModals = [...targetModals];
 
-          // 2. Resolver Pestaña activa
           if (event.state.tab && event.state.tab !== currentTab) {
             execSwitchTab(event.state.tab);
           }
         } else {
-          // Por defecto, volver al Dashboard principal sin ventanas activas
           openModals.forEach(id => execCloseModal(id));
           openModals = [];
           execSwitchTab('dashboard');
@@ -383,10 +445,17 @@
       // Establecer fecha por defecto de hoy (Chile Local Time)
       inicializarFechaHoy();
 
+      // Cargar lista de categorías
+      cargarListaCategoriasUI();
+
       // Inicializar Interfaz
       initFABPosition();
       cargarDashboard();
       cargarCuentas();
+
+      // Escucha dinámica para el cálculo de cuotas
+      document.getElementById("movMonto").addEventListener("input", actualizarCalculoCuota);
+      document.getElementById("movCuotas").addEventListener("input", actualizarCalculoCuota);
     });
 
     // --- INICIALIZADOR DE FECHA LOCAL ---
@@ -401,32 +470,92 @@
       }
     }
 
+    // --- SISTEMA DE CATEGORÍAS LOCAL ---
+    function obtenerCategorias() {
+      const locales = localStorage.getItem("fluxi_categorias");
+      if (!locales) {
+        localStorage.setItem("fluxi_categorias", JSON.stringify(DEFAULT_CATEGORIES));
+        return DEFAULT_CATEGORIES;
+      }
+      return JSON.parse(locales);
+    }
+
+    function cargarListaCategoriasUI() {
+      const categorias = obtenerCategorias();
+      
+      // Llenar selector del formulario de movimientos
+      const selectMov = document.getElementById("movCat");
+      selectMov.innerHTML = "";
+      categorias.forEach(cat => {
+        let opt = document.createElement("option");
+        opt.value = cat;
+        opt.innerText = cat;
+        selectMov.appendChild(opt);
+      });
+
+      // Llenar panel de ajustes/administrador de categorías
+      const contenedorAdmin = document.getElementById("lista-categorias-admin");
+      contenedorAdmin.innerHTML = "";
+      
+      categorias.forEach(cat => {
+        const esPorDefecto = DEFAULT_CATEGORIES.includes(cat);
+        contenedorAdmin.innerHTML += `
+          <div class="flex justify-between items-center bg-slate-800 p-3 rounded-xl border border-slate-700/40">
+            <span class="text-sm font-bold text-white">${cat}</span>
+            ${esPorDefecto 
+              ? `<span class="text-[9px] font-extrabold bg-slate-700 text-slate-400 px-2.5 py-1 rounded-md uppercase tracking-wider">Por defecto</span>`
+              : `<button onclick="eliminarCategoria('${cat}')" class="text-red-400 hover:text-red-300 text-xs bg-red-400/10 w-8 h-8 rounded-lg flex items-center justify-center">
+                   <i class="fa-solid fa-trash"></i>
+                 </button>`
+            }
+          </div>
+        `;
+      });
+    }
+
+    function agregarNuevaCategoria() {
+      const input = document.getElementById("catNuevaNombre");
+      const nombre = input.value.trim();
+      if (!nombre) return;
+
+      let categorias = obtenerCategorias();
+      if (categorias.map(c => c.toLowerCase()).includes(nombre.toLowerCase())) {
+        input.value = "";
+        return; // Categoría duplicada
+      }
+
+      categorias.push(nombre);
+      localStorage.setItem("fluxi_categorias", JSON.stringify(categorias));
+      input.value = "";
+      cargarListaCategoriasUI();
+    }
+
+    function eliminarCategoria(nombre) {
+      let categorias = obtenerCategorias();
+      categorias = categorias.filter(c => c !== nombre);
+      localStorage.setItem("fluxi_categorias", JSON.stringify(categorias));
+      cargarListaCategoriasUI();
+    }
+
     // --- SISTEMA DE GESTIÓN DE PESTAÑAS (SPA) ---
     function switchTab(tabId) {
       if (tabId === currentTab) return;
-      
-      // Registrar el cambio de pestaña en el historial nativo
       history.pushState({ tab: tabId, openModals: [...openModals] }, '');
       execSwitchTab(tabId);
     }
 
     function execSwitchTab(tabId) {
-      // Ocultar las vistas activas
       document.getElementById('view-dashboard').classList.add('hidden');
       document.getElementById('view-cuentas').classList.add('hidden');
       document.getElementById('view-ajustes').classList.add('hidden');
-      
-      // Mostrar la vista que se solicita
       document.getElementById(`view-${tabId}`).classList.remove('hidden');
 
-      // Restaurar colores de la barra de navegación
       ['dashboard', 'cuentas', 'ajustes'].forEach(id => {
         const btn = document.getElementById(`tab-${id}`);
         btn.classList.remove('text-emerald-400');
         btn.classList.add('text-slate-500');
       });
 
-      // Iluminar icono seleccionado
       const activeBtn = document.getElementById(`tab-${tabId}`);
       activeBtn.classList.remove('text-slate-500');
       activeBtn.classList.add('text-emerald-400');
@@ -438,13 +567,10 @@
     function triggerOpenModal(modalId) {
       execOpenModal(modalId);
       openModals.push(modalId);
-      
-      // Empujar estado en el historial para capturar el botón de retroceso
       history.pushState({ tab: currentTab, openModals: [...openModals] }, '');
     }
 
     function triggerCloseModal(modalId) {
-      // Al cerrar voluntariamente con el botón "X", retrocedemos en el historial
       history.back();
     }
 
@@ -472,30 +598,23 @@
       setFabPosition(savedPos);
     }
 
-    // --- POSICIÓN DEL BOTÓN FLOTANTE ---
     function setFabPosition(position) {
       const fab = document.getElementById('fab-container');
-      
-      // Limpiar clases de posicionamiento de Tailwind
       fab.classList.remove('left-6', 'right-6', 'left-1/2', '-translate-x-1/2');
       
-      // Aplicar nueva posición seleccionada
       if (position === 'left') {
         fab.classList.add('left-6');
       } else if (position === 'right') {
         fab.classList.add('right-6');
       } else {
-        // Centro predeterminado
         fab.classList.add('left-1/2', '-translate-x-1/2');
       }
 
-      // Guardar preferencia para la siguiente sesión del usuario
       localStorage.setItem('fluxi_fab_pos', position);
       
-      // Actualizar la botonera de Ajustes
       ['left', 'center', 'right'].forEach(pos => {
         const btn = document.getElementById(`btn-fab-${pos}`);
-        btn.className = "py-2.5 rounded-lg text-xs font-bold transition"; // Reset base
+        btn.className = "py-2.5 rounded-lg text-xs font-bold transition";
         if (pos === position) {
           btn.classList.add('bg-emerald-500', 'text-white', 'shadow-md');
         } else {
@@ -506,7 +625,7 @@
 
     // --- ACCIÓN DE ACTUALIZACIÓN ---
     function forzarSincronizacion() {
-      document.getElementById("status").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando`;
+      document.getElementById("status").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Cargando`;
       cargarDashboard();
       cargarCuentas();
     }
@@ -528,6 +647,126 @@
       if (tipo === 'Transferencia') btnTransfer.className = "flex-1 py-2 text-xs font-bold bg-slate-700 text-white rounded-md shadow border border-slate-600/30";
     }
 
+    // --- DETECTOR DINÁMICO DE TARJETA DE CRÉDITO Y CUOTAS ---
+    function verificarTipoCuenta() {
+      const selectCta = document.getElementById("movCuenta");
+      const ctaId = selectCta.value;
+      const ctaElegida = cuentasGlobales.find(c => c.ID_Cuenta === ctaId);
+      
+      const seccionCuotas = document.getElementById("seccion-cuotas");
+      
+      if (ctaElegida && ctaElegida.Tipo === 'Credito') {
+        seccionCuotas.classList.remove("hidden");
+        actualizarCalculoCuota();
+      } else {
+        seccionCuotas.classList.add("hidden");
+        document.getElementById("movCuotas").value = "1";
+      }
+    }
+
+    function actualizarCalculoCuota() {
+      const monto = Number(document.getElementById("movMonto").value) || 0;
+      const cuotas = Number(document.getElementById("movCuotas").value) || 1;
+      const calculoDiv = document.getElementById("calculo-cuota");
+      
+      if (monto > 0 && cuotas > 0) {
+        const costoMensual = Math.round(monto / cuotas);
+        calculoDiv.innerText = `${formatMoneda(costoMensual)} / mes`;
+      } else {
+        calculoDiv.innerText = "$0 / mes";
+      }
+    }
+
+    // --- MOTOR DE ALERTAS INTELIGENTES (UI) ---
+    function procesarAlertasInteligentes() {
+      const panel = document.getElementById("panel-alertas");
+      panel.innerHTML = "";
+      
+      let alertasGeneradas = [];
+
+      // 1. Alerta de Liquidez Crítica
+      if (dashboardGlobal["Saldo_Neto_Real"] !== undefined) {
+        const saldoNeto = Number(dashboardGlobal["Saldo_Neto_Real"]) || 0;
+        if (saldoNeto < 50000) {
+          alertasGeneradas.push({
+            tipo: "error",
+            icon: "fa-triangle-exclamation",
+            titulo: "Liquidez muy baja",
+            desc: `Tu Saldo Neto Real es de ${formatMoneda(saldoNeto)}. Te recomendamos postergar consumos no esenciales.`
+          });
+        }
+      }
+
+      // 2. Alertas Relativas a Tarjetas de Crédito
+      cuentasGlobales.forEach(cta => {
+        if (cta.Tipo === 'Credito') {
+          const cupoTotal = Number(cta.Cupo_Total) || 0;
+          const deudaActual = Math.abs(Number(cta.Saldo_Actual) || 0);
+          
+          // Alerta 2A: Deuda alta (>70% de utilización)
+          if (cupoTotal > 0 && (deudaActual / cupoTotal) > 0.7) {
+            const pct = Math.round((deudaActual / cupoTotal) * 100);
+            alertasGeneradas.push({
+              tipo: "warning",
+              icon: "fa-shield-halved",
+              titulo: `Uso elevado en ${cta.Nombre}`,
+              desc: `Has ocupado el ${pct}% de tu cupo total asignado (${formatMoneda(deudaActual)} de deuda).`
+            });
+          }
+
+          // Alerta 2B: Días restantes hasta fecha de corte o fecha de pago
+          const hoy = new Date();
+          const diaActual = hoy.getDate();
+          
+          if (cta.Dia_Corte) {
+            const diaCorte = Number(cta.Dia_Corte);
+            let diasCorteRestantes = diaCorte - diaActual;
+            if (diasCorteRestantes < 0) {
+              // Si el día de corte ya pasó este mes, calcular para el próximo
+              const ultimoDiaMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate();
+              diasCorteRestantes = (ultimoDiaMes - diaActual) + diaCorte;
+            }
+            
+            if (diasCorteRestantes <= 7) {
+              alertasGeneradas.push({
+                tipo: "info",
+                icon: "fa-calendar-days",
+                titulo: `Corte de ${cta.Nombre}`,
+                desc: `Faltan ${diasCorteRestantes} días para el cierre de tu facturación. Modera los gastos que ingresen a este periodo.`
+              });
+            }
+          }
+        }
+      });
+
+      // Renderizar Alertas en Pantalla
+      if (alertasGeneradas.length === 0) {
+        panel.innerHTML = `
+          <div class="p-4 bg-slate-800/30 rounded-2xl border border-slate-800 text-center text-xs text-slate-500">
+            <i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i> Todo bajo control en tus cuentas y límites de crédito.
+          </div>
+        `;
+      } else {
+        alertasGeneradas.forEach(a => {
+          let bgClass = "bg-sky-500/10 border-sky-500/20 text-sky-400";
+          if (a.tipo === 'warning') bgClass = "bg-amber-500/10 border-amber-500/20 text-amber-400";
+          if (a.tipo === 'error') bgClass = "bg-rose-500/10 border-rose-500/20 text-rose-400";
+
+          panel.innerHTML += `
+            <div class="p-4 rounded-2xl border flex gap-3.5 ${bgClass}">
+              <div class="text-lg pt-0.5">
+                <i class="fa-solid ${a.icon}"></i>
+              </div>
+              <div>
+                <h4 class="font-extrabold text-sm text-slate-100">${a.titulo}</h4>
+                <p class="text-xs text-slate-400 leading-relaxed mt-1">${a.desc}</p>
+              </div>
+            </div>
+          `;
+        });
+      }
+    }
+
     // --- INTEGRACIÓN Y PETICIONES API CLOUD ---
     async function cargarDashboard() {
       try {
@@ -535,11 +774,15 @@
         if (!res.ok) return;
         const data = await res.json();
         
+        dashboardGlobal = data; // Guardar en caché global
+
         if (data["Saldo_Neto_Real"]) document.getElementById("dashNeto").innerText = formatMoneda(data["Saldo_Neto_Real"]);
         if (data["Deuda_TC_CLP"]) document.getElementById("dashDeudaCLP").innerText = formatMoneda(data["Deuda_TC_CLP"]);
         if (data["Deuda_TC_USD"]) document.getElementById("dashDeudaUSD").innerText = "US$ " + (data["Deuda_TC_USD"] || 0);
+
+        procesarAlertasInteligentes();
       } catch (err) { 
-        console.log("Fluxi está corriendo en modo desarrollo o API offline."); 
+        console.log("Fluxi está en modo offline o sin API."); 
       }
     }
 
@@ -549,6 +792,8 @@
         if (!res.ok) return;
         const cuentas = await res.json();
         
+        cuentasGlobales = cuentas; // Guardar en caché global para validar cuotas y alertas
+
         // Cargar Selector de Movimientos
         const select = document.getElementById("movCuenta");
         select.innerHTML = "";
@@ -586,6 +831,10 @@
             </div>
           `;
         });
+
+        // Verificar el tipo de la primera cuenta cargada para inicializar estado de cuota
+        verificarTipoCuenta();
+        procesarAlertasInteligentes();
       } catch (err) { 
         document.getElementById("lista-cuentas").innerHTML = `
           <div class="text-center py-6 bg-slate-800/40 rounded-2xl border border-slate-800">
@@ -595,38 +844,54 @@
       }
     }
 
-    // --- FORMULARIO: REGISTRO DE MOVIMIENTO (MODIFICADO CON FECHA Y FRECUENCIA) ---
+    // --- FORMULARIO: REGISTRO DE MOVIMIENTO (SOPORTA FECHAS, RECURRENCIA Y CUOTAS) ---
     document.getElementById("movForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      document.getElementById("status").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enviando`;
+      document.getElementById("status").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Registrando...`;
       
-      // Parsear la fecha seleccionada del input
       const inputFechaVal = document.getElementById("movFecha").value;
-      const partesFecha = inputFechaVal.split("-"); // YYYY-MM-DD
-      const fechaFormateada = `${partesFecha[2]}/${partesFecha[1]}/${partesFecha[0]}`; // Convertir a DD/MM/YYYY para Sheets
+      const partesFecha = inputFechaVal.split("-"); 
+      const fechaFormateada = `${partesFecha[2]}/${partesFecha[1]}/${partesFecha[0]}`; 
+
+      // Armar la descripción agregando la cantidad de cuotas si corresponde
+      let descripcion = document.getElementById("movDesc").value;
+      const cuotas = Number(document.getElementById("movCuotas").value) || 1;
+      if (cuotas > 1) {
+        descripcion += ` (En ${cuotas} cuotas)`;
+      }
 
       const payload = {
         action: "addMovimiento",
         secret_token: TOKEN,
         ID_Mov: Date.now(),
-        Fecha: fechaFormateada, // Envía la fecha seleccionada manualmente
-        Descripcion: document.getElementById("movDesc").value,
+        Fecha: fechaFormateada, 
+        Descripcion: descripcion,
         Cuenta_Origen: document.getElementById("movCuenta").value,
         Categoria: document.getElementById("movCat").value,
         Tipo_Mov: document.getElementById("movTipo").value,
         Monto: Number(document.getElementById("movMonto").value),
         Moneda: document.getElementById("movMoneda").value,
-        Frecuencia: document.getElementById("movFrecuencia").value // Nueva variable de recurrencia
+        Frecuencia: document.getElementById("movFrecuencia").value,
+        Cuotas: cuotas
       };
 
       await enviarAGoogle(payload);
       
-      // Resetear formulario y restaurar la fecha de hoy
+      // Limpiar datos
       document.getElementById("movForm").reset();
       inicializarFechaHoy();
+      document.getElementById("seccion-cuotas").classList.add("hidden");
       
       triggerCloseModal('modal-movimiento');
-      cargarDashboard();
+
+      // TRUCO DE RETRASO PREVENTIVO:
+      // Google Sheets necesita ~1.5 segundos para realizar los recálculos en la nube.
+      // Mostramos un estado de espera antes de gatillar la recarga de balances.
+      document.getElementById("status").innerHTML = `<i class="fa-solid fa-calculator fa-bounce"></i> Planilla recalculando...`;
+      setTimeout(() => {
+        cargarDashboard();
+        cargarCuentas();
+      }, 1800);
     });
 
     // --- FORMULARIO: CONFIGURACIÓN DE NUEVA BILLETERA ---
@@ -636,8 +901,6 @@
       
       const tipoCuenta = document.getElementById("accType").value;
       const cupoLimit = Number(document.getElementById("accLimit").value) || 0;
-      
-      // ID auto-generado único por fecha y milisegundos
       const idGenerado = "CTA_" + Date.now();
 
       const payload = {
@@ -656,7 +919,11 @@
       await enviarAGoogle(payload);
       document.getElementById("cuentaForm").reset();
       triggerCloseModal('modal-cuenta');
-      cargarCuentas();
+
+      // Esperar que la base de datos procese
+      setTimeout(() => {
+        cargarCuentas();
+      }, 1500);
     });
 
     // --- MOTOR DE TRANSMISIÓN DE DATOS ---
