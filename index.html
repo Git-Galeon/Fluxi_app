@@ -55,7 +55,7 @@
         </div>
         <h1 class="text-2xl font-black tracking-tight text-white">Fluxi</h1>
       </div>
-      <span id="status" class="text-[10px] uppercase tracking-wider font-extrabold bg-slate-800 text-emerald-400 px-3 py-1.5 rounded-full flex items-center gap-1.5">
+      <span id="status" class="text-[10px] uppercase tracking-wider font-extrabold bg-slate-800 text-emerald-400 px-3 py-1.5 rounded-full flex items-center gap-1.5 cursor-pointer" onclick="verificarEstadoConexion()">
         <i class="fa-solid fa-wifi"></i> En línea
       </span>
     </header>
@@ -63,20 +63,84 @@
     <!-- ÁREA DE CONTENIDO PRINCIPAL (Con scroll interno controlado) -->
     <main class="flex-1 overflow-y-auto pb-32 px-5">
       
+      <!-- NOTIFICACIÓN DE ERROR/DIAGNÓSTICO -->
+      <div id="api-error-banner" class="hidden mb-4 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-3">
+        <i class="fa-solid fa-circle-exclamation text-amber-400 text-lg mt-0.5"></i>
+        <div class="flex-1">
+          <h4 class="text-xs font-bold text-slate-200">Sincronización Incompleta</h4>
+          <p class="text-[10px] text-slate-400 mt-1">
+            Los saldos devuelven $0. Asegúrate de tener celdas válidas en tu hoja "DASHBOARD" (B2, B3, B4) y haber implementado una "Nueva Versión" en tu Apps Script.
+          </p>
+          <button onclick="forzarSincronizacion()" class="mt-2 text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider hover:underline">Reintentar</button>
+        </div>
+      </div>
+      
       <!-- SECCIÓN A: DASHBOARD -->
       <section id="view-dashboard" class="space-y-5">
-        <!-- Tarjeta de Saldo Neto -->
-        <div class="bg-gradient-to-br from-slate-800 to-slate-800/40 p-6 rounded-3xl border border-slate-700/40 shadow-xl relative overflow-hidden">
-          <div class="absolute -right-8 -top-8 text-slate-700/20">
+        
+        <!-- Tarjeta de Saldo Neto Interactiva (Con Desglose al pulsar o pasar el cursor) -->
+        <div 
+          onclick="toggleDesgloseNeto()" 
+          class="bg-gradient-to-br from-slate-800 to-slate-800/40 p-6 rounded-3xl border border-slate-700/40 shadow-xl relative overflow-hidden cursor-pointer select-none group active:scale-[0.98] lg:hover:scale-[1.01] transition-all duration-250"
+          title="Pulsa para ver el desglose de activos y deudas"
+        >
+          <div class="absolute -right-8 -top-8 text-slate-700/20 group-hover:text-emerald-500/10 transition-colors">
             <i class="fa-solid fa-wallet text-9xl"></i>
           </div>
-          <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 relative z-10">Saldo Neto Real</h2>
-          <div class="flex items-baseline gap-1 relative z-10">
+          
+          <div class="flex justify-between items-center relative z-10">
+            <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Saldo Neto Real</h2>
+            <span class="text-[10px] bg-slate-700/50 text-slate-400 px-2.5 py-1 rounded-full flex items-center gap-1 font-bold group-hover:bg-emerald-500/10 group-hover:text-emerald-400 transition-all">
+              <i class="fa-solid fa-chart-line"></i> Desglose <i id="desglose-icon" class="fa-solid fa-chevron-down transition-transform duration-300 ml-0.5"></i>
+            </span>
+          </div>
+
+          <div class="flex items-baseline gap-1 relative z-10 mt-1">
             <span id="dashNeto" class="text-4xl font-black text-emerald-400">$0</span>
           </div>
+          
           <p class="text-xs text-slate-500 mt-3 relative z-10 flex items-center gap-1.5">
             <i class="fa-solid fa-shield-halved text-emerald-500"></i> Descontadas las deudas actuales de TC
           </p>
+
+          <!-- COMPARTIMENTO DESPLEGABLE DESGLOSE (Oculto por defecto con transición suave) -->
+          <div id="desglose-compartment" class="max-h-0 opacity-0 overflow-hidden transition-all duration-300 ease-out space-y-3 pt-0 border-t border-slate-700/0 mt-0">
+            <!-- Bloque Activos -->
+            <div class="space-y-1.5 pt-2">
+              <span class="text-[9px] text-emerald-400 font-extrabold uppercase tracking-widest flex items-center gap-1">
+                <i class="fa-solid fa-circle-arrow-up"></i> Tus Activos (Billeteras y Ahorros)
+              </span>
+              <div class="flex justify-between text-xs font-semibold text-slate-300 pl-3">
+                <span>Disponible CLP</span>
+                <span id="desgloseActivosCLP" class="text-slate-100">$0</span>
+              </div>
+              <div class="flex justify-between text-xs font-semibold text-slate-300 pl-3">
+                <span>Disponible USD</span>
+                <span id="desgloseActivosUSD" class="text-slate-100">US$ 0 ($0)</span>
+              </div>
+            </div>
+
+            <!-- Bloque Pasivos -->
+            <div class="space-y-1.5 pt-1">
+              <span class="text-[9px] text-red-400 font-extrabold uppercase tracking-widest flex items-center gap-1">
+                <i class="fa-solid fa-circle-arrow-down"></i> Tus Pasivos (Deudas en Tarjetas)
+              </span>
+              <div class="flex justify-between text-xs font-semibold text-slate-300 pl-3">
+                <span>Deuda Tarjetas CLP</span>
+                <span id="desgloseDeudasCLP" class="text-slate-100">$0</span>
+              </div>
+              <div class="flex justify-between text-xs font-semibold text-slate-300 pl-3">
+                <span>Deuda Tarjetas USD</span>
+                <span id="desgloseDeudasUSD" class="text-slate-100">US$ 0 ($0)</span>
+              </div>
+            </div>
+
+            <!-- Divisor Informativo -->
+            <div class="p-2.5 bg-slate-900/60 rounded-xl border border-slate-800/80 text-[10px] text-slate-400 leading-normal flex justify-between items-center">
+              <span>Tipo de Cambio USD/CLP:</span>
+              <span id="desgloseDolarValor" class="font-extrabold text-emerald-400">$0 CLP</span>
+            </div>
+          </div>
         </div>
 
         <!-- Indicadores de Tarjetas de Crédito -->
@@ -97,9 +161,8 @@
             <i class="fa-solid fa-brain text-emerald-400"></i> Alertas de Inteligencia Financiera
           </h3>
           <div id="panel-alertas" class="space-y-2.5">
-            <!-- Cargador o tarjetas vacías por defecto -->
             <div class="p-4 bg-slate-800/30 rounded-2xl border border-slate-800 text-center text-xs text-slate-500">
-              <i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i> Todo en orden en tus ciclos y billeteras.
+              <i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i> Todo bajo control en tus límites de crédito.
             </div>
           </div>
         </div>
@@ -136,8 +199,8 @@
               <span class="flex items-center gap-3"><i class="fa-solid fa-tags text-emerald-400"></i> Gestionar Categorías</span>
               <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
             </button>
-            <button class="w-full text-left p-4 flex justify-between items-center hover:bg-slate-800 transition">
-              <span class="flex items-center gap-3"><i class="fa-solid fa-circle-question text-slate-400"></i> Ayuda y Soporte</span>
+            <button onclick="diagnosticarPlanilla()" class="w-full text-left p-4 flex justify-between items-center hover:bg-slate-800 transition">
+              <span class="flex items-center gap-3"><i class="fa-solid fa-toolbox text-amber-400"></i> Diagnosticar Conexión</span>
               <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
             </button>
           </div>
@@ -156,7 +219,7 @@
           </div>
         </div>
 
-        <p class="text-center text-[10px] text-slate-600">Fluxi App v1.3.0 • Desarrollado a Medida</p>
+        <p class="text-center text-[10px] text-slate-600">Fluxi App v1.4.5 • Desarrollado a Medida</p>
       </section>
 
     </main>
@@ -204,6 +267,21 @@
       </header>
       
       <form id="movForm" class="flex-1 overflow-y-auto p-5 space-y-4">
+        
+        <!-- IMPORTADOR INTELIGENTE DESDE NOTIFICACIONES / GOOGLE WALLET -->
+        <div class="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/45 space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-[10px] text-emerald-400 font-extrabold uppercase tracking-wider flex items-center gap-1">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Lector Inteligente de Notificaciones
+            </span>
+            <span class="text-[9px] text-slate-500">Google Wallet / SMS / Bancos</span>
+          </div>
+          <textarea id="importText" rows="2" class="w-full p-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 text-xs focus:outline-none focus:border-emerald-500" placeholder="Pega el mensaje de tu banco aquí... Ej: 'Compra por $14.990 en Uber'"></textarea>
+          <button type="button" onclick="procesarNotificacionPegada()" class="w-full py-2 bg-slate-800 hover:bg-slate-750 border border-slate-700/40 rounded-xl text-xs font-bold text-emerald-400 transition">
+            Autocompletar Formulario
+          </button>
+        </div>
+
         <!-- Selector Tipo de Flujo -->
         <div class="flex p-1 bg-slate-800 rounded-lg mb-2 border border-slate-700/30">
           <button type="button" onclick="setTipoMov('Egreso')" id="btn-egreso" class="flex-1 py-2 text-xs font-bold bg-slate-700 text-white rounded-md shadow">Gasto</button>
@@ -223,7 +301,7 @@
 
         <!-- Fila de Descripción -->
         <div>
-          <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Descripción</label>
+          <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Descripción / Comercio</label>
           <input type="text" id="movDesc" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium" placeholder="Ej: Supermercado Lider, Cine..." required>
         </div>
 
@@ -392,7 +470,7 @@
   <!-- ============================================== -->
   <script>
     // Configuración Base de Conexión a Drive
-    const API_URL = "https://script.google.com/macros/s/AKfycbz5Gp8Xwe9lwtjFHOazMYucOrRvaM64hPfcGsSFNzEVUdviAeRJTt3UIPTVKREySl8o/exec"; 
+    const API_URL = "https://script.google.com/macros/s/AKfycbw2JzkGCOgkxldJWBThQWtqRN1278MwgW8M4FHSXdg8BOAmzyjnXc2hy3dMQBbHrd8o/exec"; 
     const TOKEN = "A_gam3_n0n-7&7";
 
     // Variables de Estado Interno
@@ -400,6 +478,7 @@
     let openModals = [];
     let cuentasGlobales = [];
     let dashboardGlobal = {};
+    let desgloseAbierto = false;
 
     // Categorías Predeterminadas
     const DEFAULT_CATEGORIES = [
@@ -410,10 +489,8 @@
 
     // --- ARRANQUE E HISTORIAL NATIVO (BOTÓN ATRÁS) ---
     document.addEventListener("DOMContentLoaded", () => {
-      // Registrar estado inicial en la historia del navegador
       history.replaceState({ tab: 'dashboard', openModals: [] }, '');
 
-      // Escuchar el evento de retroceso del teléfono
       window.onpopstate = function (event) {
         if (event.state) {
           const targetModals = event.state.openModals || [];
@@ -442,23 +519,17 @@
         }
       };
 
-      // Establecer fecha por defecto de hoy (Chile Local Time)
       inicializarFechaHoy();
-
-      // Cargar lista de categorías
       cargarListaCategoriasUI();
-
-      // Inicializar Interfaz
       initFABPosition();
+      
       cargarDashboard();
       cargarCuentas();
 
-      // Escucha dinámica para el cálculo de cuotas
       document.getElementById("movMonto").addEventListener("input", actualizarCalculoCuota);
       document.getElementById("movCuotas").addEventListener("input", actualizarCalculoCuota);
     });
 
-    // --- INICIALIZADOR DE FECHA LOCAL ---
     function inicializarFechaHoy() {
       const inputFecha = document.getElementById("movFecha");
       if (inputFecha) {
@@ -467,6 +538,175 @@
         const mm = String(hoy.getMonth() + 1).padStart(2, '0');
         const dd = String(hoy.getDate()).padStart(2, '0');
         inputFecha.value = `${yyyy}-${mm}-${dd}`;
+      }
+    }
+
+    // --- INTERACCIÓN DE DESGLOSE (COLAPSO/EXPANSIÓN FRONTAL) ---
+    function toggleDesgloseNeto() {
+      desgloseAbierto = !desgloseAbierto;
+      const compartment = document.getElementById("desglose-compartment");
+      const icon = document.getElementById("desglose-icon");
+
+      if (desgloseAbierto) {
+        compartment.style.maxHeight = "500px"; // Altura holgada segura
+        compartment.style.opacity = "1";
+        compartment.style.marginTop = "16px";
+        compartment.style.borderTopWidth = "1px";
+        compartment.style.borderTopColor = "rgba(51, 65, 85, 0.4)";
+        icon.style.transform = "rotate(180deg)";
+        calcularYMostrarDesgloseUI();
+      } else {
+        compartment.style.maxHeight = "0";
+        compartment.style.opacity = "0";
+        compartment.style.marginTop = "0";
+        compartment.style.borderTopWidth = "0px";
+        compartment.style.borderTopColor = "transparent";
+        icon.style.transform = "rotate(0deg)";
+      }
+    }
+
+    // --- CÁLCULO EN CALIENTE DEL DESGLOSE DE ACTIVOS/PASIVOS ---
+    function calcularYMostrarDesgloseUI() {
+      let activosCLP = 0;
+      let activosUSD = 0;
+      let deudasCLP = 0;
+      let deudasUSD = 0;
+
+      // Por defecto, calculamos un dólar de conversión aproximado desde la diferencia,
+      // o tomamos $950 CLP como respaldo de mercado si la API no reporta B5
+      let valorDolarEstimado = 950; 
+      if (dashboardGlobal["Valor_Dolar"] && Number(dashboardGlobal["Valor_Dolar"]) > 100) {
+        valorDolarEstimado = Number(dashboardGlobal["Valor_Dolar"]);
+      }
+
+      cuentasGlobales.forEach(c => {
+        const saldo = Number(c.Saldo_Actual) || 0;
+        if (c.Tipo === 'Credito') {
+          // Es un pasivo (tarjeta de crédito con deuda acumulada, usualmente saldo negativo o deudor)
+          const deuda = Math.abs(saldo); // Tomamos el valor de la deuda absoluto
+          if (c.Moneda === 'USD') {
+            deudasUSD += deuda;
+          } else {
+            deudasCLP += deuda;
+          }
+        } else {
+          // Es un activo (cuenta corriente, vista, débito, inversión)
+          if (c.Moneda === 'USD') {
+            activosUSD += saldo;
+          } else {
+            activosCLP += saldo;
+          }
+        }
+      });
+
+      // Escribir en pantalla los valores calculados
+      document.getElementById("desgloseActivosCLP").innerText = formatMoneda(activosCLP);
+      document.getElementById("desgloseActivosUSD").innerText = `US$ ${activosUSD} (${formatMoneda(activosUSD * valorDolarEstimado)})`;
+      document.getElementById("desgloseDeudasCLP").innerText = formatMoneda(deudasCLP);
+      document.getElementById("desgloseDeudasUSD").innerText = `US$ ${deudasUSD} (${formatMoneda(deudasUSD * valorDolarEstimado)})`;
+      document.getElementById("desgloseDolarValor").innerText = `$${valorDolarEstimado} CLP`;
+    }
+
+    // --- PARSER DE TEXTO / NOTIFICACIONES DE BANCO / WALLET ---
+    function procesarNotificacionPegada() {
+      const texto = document.getElementById("importText").value;
+      if (!texto.trim()) return;
+
+      const regexMonto = /(?:\$|CLP)?\s?(\d{1,3}(?:\.\d{3})+|\d+)/;
+      const matchMonto = texto.match(regexMonto);
+      
+      if (matchMonto) {
+        const numeroLimpio = matchMonto[1].replace(/\./g, "");
+        document.getElementById("movMonto").value = numeroLimpio;
+      }
+
+      let descripcionExtraida = "Movimiento Importado";
+      const textoBajo = texto.toLowerCase();
+
+      const patronesComercio = [
+        /en\s+([A-Za-z0-9\s_]+?)(?:\s+con|\s+el|\s+por|\s+monto|\.|$)/,
+        /a\s+([A-Za-z0-9\s_]+?)(?:\s+con|\s+el|\s+por|\s+monto|\.|$)/,
+        /de\s+([A-Za-z0-9\s_]+?)(?:\s+con|\s+el|\s+por|\s+monto|\.|$)/
+      ];
+
+      for (let regex of patronesComercio) {
+        const match = texto.match(regex);
+        if (match && match[1]) {
+          descripcionExtraida = match[1].trim();
+          break;
+        }
+      }
+
+      if (descripcionExtraida === "Movimiento Importado" && texto.length < 40) {
+        descripcionExtraida = texto;
+      }
+
+      document.getElementById("movDesc").value = descripcionExtraida;
+
+      let categoriaDetectada = "Otros";
+      const categoriasMap = {
+        "Alimentacion": ["lider", "jumbo", "unimarc", "tottus", "uber eats", "pedidosya", "restaurante", "mcdonald", "starbucks", "comida", "supermercado"],
+        "Transporte": ["uber", "cabify", "didi", "metro", "bip", "copec", "shell", "petrobras", "bencina", "peaje"],
+        "Cuentas Fijas": ["vtr", "movistar", "entel", "enel", "aguas", "gasco", "netflix", "spotify", "gimnasio", "suscripcion", "condominio"],
+        "Ocio": ["cine", "cineplanet", "cinemark", "pub", "bar", "playstation", "steam", "falabella", "ripley", "paris", "aliexpress", "shein"],
+        "Salud": ["farmacia", "cruz verde", "ahumada", "salcobrand", "clinica", "medico", "dentista"]
+      };
+
+      for (let [cat, palabras] of Object.entries(categoriasMap)) {
+        if (palabras.some(p => textoBajo.includes(p))) {
+          categoriaDetectada = cat;
+          break;
+        }
+      }
+      document.getElementById("movCat").value = categoriaDetectada;
+
+      if (cuentasGlobales.length > 0) {
+        const cuentaMatch = cuentasGlobales.find(cta => 
+          textoBajo.includes(cta.Nombre.toLowerCase()) || 
+          (cta.Tipo === 'Credito' && (textoBajo.includes("credito") || textoBajo.includes("tc") || textoBajo.includes("tarjeta")))
+        );
+        if (cuentaMatch) {
+          document.getElementById("movCuenta").value = cuentaMatch.ID_Cuenta;
+          verificarTipoCuenta();
+        }
+      }
+
+      document.getElementById("importText").value = "";
+      const btnConfirmar = document.querySelector("#movForm button[type='submit']");
+      const textoOriginal = btnConfirmar.innerText;
+      btnConfirmar.innerText = "¡Campos Autocompletados!";
+      btnConfirmar.classList.remove("bg-emerald-500");
+      btnConfirmar.classList.add("bg-indigo-600");
+      
+      setTimeout(() => {
+        btnConfirmar.innerText = textoOriginal;
+        btnConfirmar.classList.remove("bg-indigo-600");
+        btnConfirmar.classList.add("bg-emerald-500");
+      }, 1500);
+    }
+
+    // --- DIAGNÓSTICO DE LA HOJA DE SHEETS ---
+    function diagnosticarPlanilla() {
+      let msj = `--- INFORME DE DIAGNÓSTICO FLUXI ---\n\n`;
+      msj += `1. Endpoint API: ${API_URL ? 'Configurado' : 'Faltante'}\n`;
+      msj += `2. Cuentas Sincronizadas: ${cuentasGlobales.length} registradas\n`;
+      msj += `3. Última lectura Dashboard:\n`;
+      msj += `   - Saldo Neto: ${dashboardGlobal["Saldo_Neto_Real"] !== undefined ? dashboardGlobal["Saldo_Neto_Real"] : 'No se lee (revisa celda B2)'}\n`;
+      msj += `   - Deuda CLP: ${dashboardGlobal["Deuda_TC_CLP"] !== undefined ? dashboardGlobal["Deuda_TC_CLP"] : 'No se lee (revisa celda B3)'}\n`;
+      msj += `   - Deuda USD: ${dashboardGlobal["Deuda_TC_USD"] !== undefined ? dashboardGlobal["Deuda_TC_USD"] : 'No se lee (revisa celda B4)'}\n\n`;
+      msj += `¿Qué hacer si todo está en $0?:\n`;
+      msj += `A. Abre tu hoja Google Sheets.\n`;
+      msj += `B. Asegúrate de que las celdas B2, B3 y B4 en la pestaña 'DASHBOARD' tengan números.\n`;
+      msj += `C. En Apps Script, haz clic en Implementar -> Gestionar Implementaciones y crea una NUEVA VERSIÓN.`;
+
+      alert(msj);
+    }
+
+    function verificarEstadoConexion() {
+      if (cuentasGlobales.length === 0) {
+        document.getElementById("api-error-banner").classList.remove("hidden");
+      } else {
+        alert("Tu conexión con Google Drive e Inteligencia de Cuentas está al 100% activa.");
       }
     }
 
@@ -482,8 +722,6 @@
 
     function cargarListaCategoriasUI() {
       const categorias = obtenerCategorias();
-      
-      // Llenar selector del formulario de movimientos
       const selectMov = document.getElementById("movCat");
       selectMov.innerHTML = "";
       categorias.forEach(cat => {
@@ -493,7 +731,6 @@
         selectMov.appendChild(opt);
       });
 
-      // Llenar panel de ajustes/administrador de categorías
       const contenedorAdmin = document.getElementById("lista-categorias-admin");
       contenedorAdmin.innerHTML = "";
       
@@ -521,7 +758,7 @@
       let categorias = obtenerCategorias();
       if (categorias.map(c => c.toLowerCase()).includes(nombre.toLowerCase())) {
         input.value = "";
-        return; // Categoría duplicada
+        return;
       }
 
       categorias.push(nombre);
@@ -652,7 +889,6 @@
       const selectCta = document.getElementById("movCuenta");
       const ctaId = selectCta.value;
       const ctaElegida = cuentasGlobales.find(c => c.ID_Cuenta === ctaId);
-      
       const seccionCuotas = document.getElementById("seccion-cuotas");
       
       if (ctaElegida && ctaElegida.Tipo === 'Credito') {
@@ -681,13 +917,12 @@
     function procesarAlertasInteligentes() {
       const panel = document.getElementById("panel-alertas");
       panel.innerHTML = "";
-      
       let alertasGeneradas = [];
 
       // 1. Alerta de Liquidez Crítica
       if (dashboardGlobal["Saldo_Neto_Real"] !== undefined) {
         const saldoNeto = Number(dashboardGlobal["Saldo_Neto_Real"]) || 0;
-        if (saldoNeto < 50000) {
+        if (saldoNeto < 50000 && saldoNeto > 0) {
           alertasGeneradas.push({
             tipo: "error",
             icon: "fa-triangle-exclamation",
@@ -703,7 +938,6 @@
           const cupoTotal = Number(cta.Cupo_Total) || 0;
           const deudaActual = Math.abs(Number(cta.Saldo_Actual) || 0);
           
-          // Alerta 2A: Deuda alta (>70% de utilización)
           if (cupoTotal > 0 && (deudaActual / cupoTotal) > 0.7) {
             const pct = Math.round((deudaActual / cupoTotal) * 100);
             alertasGeneradas.push({
@@ -714,7 +948,6 @@
             });
           }
 
-          // Alerta 2B: Días restantes hasta fecha de corte o fecha de pago
           const hoy = new Date();
           const diaActual = hoy.getDate();
           
@@ -722,7 +955,6 @@
             const diaCorte = Number(cta.Dia_Corte);
             let diasCorteRestantes = diaCorte - diaActual;
             if (diasCorteRestantes < 0) {
-              // Si el día de corte ya pasó este mes, calcular para el próximo
               const ultimoDiaMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate();
               diasCorteRestantes = (ultimoDiaMes - diaActual) + diaCorte;
             }
@@ -732,14 +964,13 @@
                 tipo: "info",
                 icon: "fa-calendar-days",
                 titulo: `Corte de ${cta.Nombre}`,
-                desc: `Faltan ${diasCorteRestantes} días para el cierre de tu facturación. Modera los gastos que ingresen a este periodo.`
+                desc: `Faltan ${diasCorteRestantes} días para el cierre de tu facturación.`
               });
             }
           }
         }
       });
 
-      // Renderizar Alertas en Pantalla
       if (alertasGeneradas.length === 0) {
         panel.innerHTML = `
           <div class="p-4 bg-slate-800/30 rounded-2xl border border-slate-800 text-center text-xs text-slate-500">
@@ -771,18 +1002,28 @@
     async function cargarDashboard() {
       try {
         const res = await fetch(`${API_URL}?action=getDashboard`);
-        if (!res.ok) return;
+        if (!res.ok) {
+          document.getElementById("api-error-banner").classList.remove("hidden");
+          return;
+        }
         const data = await res.json();
         
-        dashboardGlobal = data; // Guardar en caché global
+        dashboardGlobal = data;
 
-        if (data["Saldo_Neto_Real"]) document.getElementById("dashNeto").innerText = formatMoneda(data["Saldo_Neto_Real"]);
-        if (data["Deuda_TC_CLP"]) document.getElementById("dashDeudaCLP").innerText = formatMoneda(data["Deuda_TC_CLP"]);
-        if (data["Deuda_TC_USD"]) document.getElementById("dashDeudaUSD").innerText = "US$ " + (data["Deuda_TC_USD"] || 0);
+        if (!data["Saldo_Neto_Real"] && !data["Deuda_TC_CLP"]) {
+          document.getElementById("api-error-banner").classList.remove("hidden");
+        } else {
+          document.getElementById("api-error-banner").classList.add("hidden");
+        }
+
+        if (data["Saldo_Neto_Real"] !== undefined) document.getElementById("dashNeto").innerText = formatMoneda(data["Saldo_Neto_Real"]);
+        if (data["Deuda_TC_CLP"] !== undefined) document.getElementById("dashDeudaCLP").innerText = formatMoneda(data["Deuda_TC_CLP"]);
+        if (data["Deuda_TC_USD"] !== undefined) document.getElementById("dashDeudaUSD").innerText = "US$ " + (data["Deuda_TC_USD"] || 0);
 
         procesarAlertasInteligentes();
+        if (desgloseAbierto) calcularYMostrarDesgloseUI();
       } catch (err) { 
-        console.log("Fluxi está en modo offline o sin API."); 
+        document.getElementById("api-error-banner").classList.remove("hidden");
       }
     }
 
@@ -792,13 +1033,11 @@
         if (!res.ok) return;
         const cuentas = await res.json();
         
-        cuentasGlobales = cuentas; // Guardar en caché global para validar cuotas y alertas
+        cuentasGlobales = cuentas;
 
-        // Cargar Selector de Movimientos
         const select = document.getElementById("movCuenta");
         select.innerHTML = "";
         
-        // Cargar Lista de Cuentas en UI
         const listaDiv = document.getElementById("lista-cuentas");
         listaDiv.innerHTML = "";
 
@@ -832,19 +1071,19 @@
           `;
         });
 
-        // Verificar el tipo de la primera cuenta cargada para inicializar estado de cuota
         verificarTipoCuenta();
         procesarAlertasInteligentes();
+        if (desgloseAbierto) calcularYMostrarDesgloseUI();
       } catch (err) { 
         document.getElementById("lista-cuentas").innerHTML = `
           <div class="text-center py-6 bg-slate-800/40 rounded-2xl border border-slate-800">
-            <p class="text-xs text-slate-500">Fluxi en modo offline. Revisa tu API_URL en index.html</p>
+            <p class="text-xs text-slate-500">Fluxi en modo offline. Revisa tu API_URL o tu despliegue.</p>
           </div>
         `;
       }
     }
 
-    // --- FORMULARIO: REGISTRO DE MOVIMIENTO (SOPORTA FECHAS, RECURRENCIA Y CUOTAS) ---
+    // --- FORMULARIO: REGISTRO DE MOVIMIENTO ---
     document.getElementById("movForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       document.getElementById("status").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Registrando...`;
@@ -853,11 +1092,10 @@
       const partesFecha = inputFechaVal.split("-"); 
       const fechaFormateada = `${partesFecha[2]}/${partesFecha[1]}/${partesFecha[0]}`; 
 
-      // Armar la descripción agregando la cantidad de cuotas si corresponde
-      let descripcion = document.getElementById("movDesc").value;
+      let comic = document.getElementById("movDesc").value;
       const cuotas = Number(document.getElementById("movCuotas").value) || 1;
       if (cuotas > 1) {
-        descripcion += ` (En ${cuotas} cuotas)`;
+        comic += ` (En ${cuotas} cuotas)`;
       }
 
       const payload = {
@@ -865,7 +1103,7 @@
         secret_token: TOKEN,
         ID_Mov: Date.now(),
         Fecha: fechaFormateada, 
-        Descripcion: descripcion,
+        Descripcion: comic,
         Cuenta_Origen: document.getElementById("movCuenta").value,
         Categoria: document.getElementById("movCat").value,
         Tipo_Mov: document.getElementById("movTipo").value,
@@ -877,17 +1115,13 @@
 
       await enviarAGoogle(payload);
       
-      // Limpiar datos
       document.getElementById("movForm").reset();
       inicializarFechaHoy();
       document.getElementById("seccion-cuotas").classList.add("hidden");
       
       triggerCloseModal('modal-movimiento');
 
-      // TRUCO DE RETRASO PREVENTIVO:
-      // Google Sheets necesita ~1.5 segundos para realizar los recálculos en la nube.
-      // Mostramos un estado de espera antes de gatillar la recarga de balances.
-      document.getElementById("status").innerHTML = `<i class="fa-solid fa-calculator fa-bounce"></i> Planilla recalculando...`;
+      document.getElementById("status").innerHTML = `<i class="fa-solid fa-calculator fa-bounce"></i> Recalculando...`;
       setTimeout(() => {
         cargarDashboard();
         cargarCuentas();
@@ -920,7 +1154,6 @@
       document.getElementById("cuentaForm").reset();
       triggerCloseModal('modal-cuenta');
 
-      // Esperar que la base de datos procese
       setTimeout(() => {
         cargarCuentas();
       }, 1500);
