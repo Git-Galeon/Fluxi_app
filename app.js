@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbz5Gp8Xwe9lwtjFHOazMYucOrRvaM64hPfcGsSFNzEVUdviAeRJTt3UIPTVKREySl8o/exec"; // Reemplaza con tu URL de GAS
+const API_URL = "https://script.google.com/macros/s/AKfycbyIC3yGswFCICi79jewstcjRmyluREb22mtBxVUlJuyR8CPTc23KSdK36NXaEDYRFuv/exec"; // Reemplaza con tu URL de GAS
 const TOKEN = "A_gam3_n0n-7&7";
 
 // Iniciar PWA Service Worker
