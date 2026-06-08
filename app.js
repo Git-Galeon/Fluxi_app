@@ -3,7 +3,7 @@
 // ============================================
 
 // 1. PEGA TU URL DE APPS SCRIPT AQUÍ UNA SOLA VEZ
-const API_URL = "https://script.google.com/macros/s/AKfycbyxBeq9kO8ZaX0LktUim281Lpc39XeZXbMKs9AcbrbthlzImdBbWgh0j2867SVteQc/exec"; 
+const API_URL = "https://script.google.com/macros/s/AKfycbz3X6-HM92OFY8Zio19WyVo_7afoNoZiWTKhi8qz5S0bn5WHglb4m9TcQd1vt9F43Su/exec"; 
 const TOKEN = "A_gam3_n0n-7&7";
 
 let lastSyncTime = null;
