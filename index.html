@@ -528,6 +528,33 @@
       </div>
     </div>
 
+    <!-- MODAL: LOGIN / CONFIGURACIÓN INICIAL -->
+    <div id="modal-login" class="hidden absolute inset-0 bg-slate-900 z-[60] flex flex-col modal-slide-up modal-hidden">
+      <div class="flex-1 flex flex-col justify-center p-6 space-y-6">
+        <div class="text-center space-y-2">
+          <div class="w-16 h-16 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 flex items-center justify-center mx-auto mb-4">
+            <i class="fa-solid fa-link text-emerald-400 text-3xl"></i>
+          </div>
+          <h2 class="text-2xl font-black text-white">Vincular Base de Datos</h2>
+          <p class="text-xs text-slate-400">Ingresa las credenciales de tu Google Apps Script para sincronizar Fluxi.</p>
+        </div>
+        
+        <form id="loginForm" class="space-y-4 bg-slate-800/40 p-5 rounded-3xl border border-slate-700/50">
+          <div>
+            <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">URL de la API (Apps Script)</label>
+            <input type="url" id="loginUrl" required class="w-full p-4 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-xs font-medium" placeholder="https://script.google.com/macros/s/.../exec">
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Token de Seguridad</label>
+            <input type="password" id="loginToken" required class="w-full p-4 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-xs font-medium" placeholder="Tu token secreto">
+          </div>
+          <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-black text-sm uppercase tracking-wider p-4 rounded-xl mt-2 transition">
+            Conectar y Sincronizar
+          </button>
+        </form>
+      </div>
+    </div>
+
     <!-- NOTIFICACIÓN TOAST (Sistema de notificaciones flotantes) -->
     <div id="toast-container" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none space-y-2"></div>
 
