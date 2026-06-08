@@ -40,6 +40,13 @@
       opacity: 1; 
       pointer-events: auto; 
     }
+    .toast-slide-in {
+      animation: slideInUp 0.3s ease-out;
+    }
+    @keyframes slideInUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
   </style>
 </head>
 <body class="bg-black text-slate-100 h-screen w-screen overflow-hidden flex justify-center">
@@ -79,7 +86,7 @@
         <!-- Tarjeta de Saldo Neto Real con Desglose al pulsar -->
         <div 
           onclick="toggleDesgloseNeto()" 
-          class="bg-gradient-to-br from-slate-800 to-slate-800/40 p-6 rounded-3xl border border-slate-700/40 shadow-xl relative overflow-hidden cursor-pointer select-none group active:scale-[0.98] transition-all duration-200"
+          class="bg-gradient-to-br from-slate-800 to-slate-800/40 p-6 rounded-3xl border border-slate-700/40 shadow-xl relative overflow-hidden cursor-pointer select-none group active:scale-[0.98] transition-transform"
         >
           <div class="absolute -right-8 -top-8 text-slate-700/20 group-hover:text-emerald-500/10 transition-colors">
             <i class="fa-solid fa-wallet text-9xl"></i>
@@ -186,7 +193,7 @@
         <div class="space-y-2">
           <div class="relative flex items-center">
             <span class="absolute left-3.5 text-slate-500 text-xs"><i class="fa-solid fa-magnifying-glass"></i></span>
-            <input type="text" id="filtroTexto" oninput="filtrarMovimientos()" class="w-full pl-9 pr-10 py-3 rounded-xl bg-slate-800 border border-slate-700/60 text-xs text-white focus:outline-none focus:border-emerald-500" placeholder="Buscar comercio, detalle o monto...">
+            <input type="text" id="filtroTexto" oninput="filtrarMovimientos()" class="w-full pl-9 pr-10 py-3 rounded-xl bg-slate-800 border border-slate-700/60 text-xs text-white focus:outline-none focus:border-emerald-500" placeholder="Buscar movimiento...">
             <button onclick="document.getElementById('filtroTexto').value=''; filtrarMovimientos();" class="absolute right-3 text-slate-500 hover:text-white p-1">
               <i class="fa-solid fa-circle-xmark"></i>
             </button>
@@ -230,7 +237,7 @@
               <span class="flex items-center gap-3"><i class="fa-solid fa-arrows-rotate text-emerald-400"></i> Forzar Sincronización</span>
               <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
             </button>
-            <a href="https://docs.google.com/spreadsheets/d/1QWY_Tox9FkGQk1HB8wdaDjxpuH4zHiLJh7G_2cRxTc4" target="_blank" class="w-full text-left p-4 border-b border-slate-700/40 flex justify-between items-center hover:bg-slate-800 transition block">
+            <a href="https://docs.google.com/spreadsheets/d/1QWY_Tox9FkGQk1HB8wdaDjxpuH4zHiLJh7G_2cRxTc4" target="_blank" class="w-full text-left p-4 border-b border-slate-700/40 flex justify-between items-center hover:bg-slate-800 transition">
               <span class="flex items-center gap-3"><i class="fa-solid fa-file-excel text-emerald-400"></i> Ir a Google Sheets</span>
               <i class="fa-solid fa-arrow-up-right-from-square text-slate-500 text-xs"></i>
             </a>
@@ -238,7 +245,7 @@
               <span class="flex items-center gap-3"><i class="fa-solid fa-tags text-emerald-400"></i> Gestionar Categorías (Drive)</span>
               <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
             </button>
-            <button onclick="diagnosticarPlanilla()" class="w-full text-left p-4 flex justify-between items-center hover:bg-slate-800 transition">
+            <button onclick="triggerOpenModal('modal-diagnostico')" class="w-full text-left p-4 flex justify-between items-center hover:bg-slate-800 transition">
               <span class="flex items-center gap-3"><i class="fa-solid fa-toolbox text-amber-400"></i> Diagnosticar Conexión</span>
               <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
             </button>
@@ -265,7 +272,7 @@
 
     <!-- BOTÓN FLOTANTE REGISTRO (FAB) -->
     <div id="fab-container" class="absolute bottom-20 z-40 transition-all duration-300">
-      <button onclick="abrirModalNuevoMovimiento()" class="bg-emerald-500 hover:bg-emerald-400 text-white w-14 h-14 rounded-full flex items-center justify-center text-2xl shadow-xl shadow-emerald-500/30 active:scale-90 transition">
+      <button onclick="abrirModalNuevoMovimiento()" class="bg-emerald-500 hover:bg-emerald-400 text-white w-14 h-14 rounded-full flex items-center justify-center text-2xl shadow-xl shadow-emerald-500/50 active:scale-95 transition-transform">
         <i class="fa-solid fa-plus"></i>
       </button>
     </div>
@@ -318,7 +325,7 @@
             </span>
             <span class="text-[9px] text-slate-500">Google Wallet / SMS</span>
           </div>
-          <textarea id="importText" rows="2" class="w-full p-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 text-xs focus:outline-none focus:border-emerald-500" placeholder="Pega el mensaje de tu banco aquí..."></textarea>
+          <textarea id="importText" rows="2" class="w-full p-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 text-xs focus:outline-none focus:border-emerald-500" placeholder="Pega el texto del SMS o notificación..."></textarea>
           <button type="button" onclick="procesarNotificacionPegada()" class="w-full py-2 bg-slate-800 hover:bg-slate-750 border border-slate-700/40 rounded-xl text-xs font-bold text-emerald-400 transition">
             Autocompletar Formulario
           </button>
@@ -337,14 +344,14 @@
           <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Monto</label>
           <div class="relative">
             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl font-bold">$</span>
-            <input type="number" id="movMonto" class="w-full pl-10 p-4 rounded-xl bg-slate-800 border border-slate-700 text-white text-xl font-bold focus:outline-none focus:border-emerald-500" placeholder="0" required>
+            <input type="number" id="movMonto" class="w-full pl-10 p-4 rounded-xl bg-slate-800 border border-slate-700 text-white text-xl font-bold focus:outline-none focus:border-emerald-500" placeholder="0">
           </div>
         </div>
 
         <!-- Fila de Descripción -->
         <div>
           <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Descripción / Comercio</label>
-          <input type="text" id="movDesc" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium" placeholder="Ej: Supermercado Lider..." required>
+          <input type="text" id="movDesc" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium" placeholder="Ej: Netflix, Supermercado, etc...">
         </div>
 
         <!-- FILA: FECHA Y FRECUENCIA RECURRENTE -->
@@ -368,7 +375,8 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Billetera / Cuenta</label>
-            <select id="movCuenta" onchange="verificarTipoCuenta()" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium"></select>
+            <select id="movCuenta" onchange="verificarTipoCuenta()" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium">
+            </select>
           </div>
           <div>
             <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Moneda</label>
@@ -423,7 +431,7 @@
       <form id="cuentaForm" class="flex-1 overflow-y-auto p-5 space-y-4">
         <div>
           <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Nombre de la Cuenta</label>
-          <input type="text" id="accName" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium" placeholder="Ej: CMR Falabella..." required>
+          <input type="text" id="accName" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium" placeholder="Ej: Mi Billetera Efectivo">
         </div>
 
         <div class="grid grid-cols-2 gap-3">
@@ -448,7 +456,7 @@
           <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Saldo Inicial (o Cupo en TC)</label>
           <div class="relative">
             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
-            <input type="number" id="accLimit" class="w-full pl-8 p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium" placeholder="0" required>
+            <input type="number" id="accLimit" class="w-full pl-8 p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium" placeholder="0">
           </div>
         </div>
 
@@ -473,769 +481,70 @@
     <div id="modal-categorias" class="hidden absolute inset-0 bg-slate-900 z-50 flex flex-col modal-slide-up modal-hidden">
       <header class="flex justify-between items-center p-5 border-b border-slate-800">
         <h2 class="text-lg font-bold text-white">Categorías en Drive</h2>
-        <button type="button" onclick="triggerCloseModal('modal-categorias')" class="w-8 h-8 bg-slate-800 rounded-full flex justify-center items-center text-slate-400"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" onclick="triggerCloseModal('modal-categorias')" class="w-8 h-8 bg-slate-800 rounded-full flex justify-center items-center text-slate-400">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </header>
       <div class="flex-1 overflow-y-auto p-5 space-y-6">
         <div class="flex gap-2">
-          <input type="text" id="catNuevaNombre" class="flex-1 p-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-emerald-500" placeholder="Nueva categoría...">
+          <input type="text" id="catNuevaNombre" class="flex-1 p-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-emerald-500" placeholder="Nueva categoría">
           <button onclick="agregarNuevaCategoriaDrive()" class="bg-emerald-500 text-white px-4 rounded-xl font-bold"><i class="fa-solid fa-plus"></i></button>
         </div>
         <div id="lista-categorias-admin" class="space-y-2"></div>
       </div>
     </div>
 
+    <!-- MODAL: PANEL DE DIAGNÓSTICO -->
+    <div id="modal-diagnostico" class="hidden absolute inset-0 bg-slate-900 z-50 flex flex-col modal-slide-up modal-hidden">
+      <header class="flex justify-between items-center p-5 border-b border-slate-800">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-stethoscope text-amber-400"></i> Panel de Diagnóstico</h2>
+        <button type="button" onclick="triggerCloseModal('modal-diagnostico')" class="w-8 h-8 bg-slate-800 rounded-full flex justify-center items-center text-slate-400">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </header>
+      <div class="flex-1 overflow-y-auto p-5 space-y-4">
+        <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700/40 space-y-2">
+          <h3 class="text-xs font-bold text-slate-400 uppercase">Estado de Red</h3>
+          <p class="text-sm"><span class="font-bold">Online:</span> <span id="diag-online" class="text-emerald-400">Verificando...</span></p>
+          <p class="text-sm"><span class="font-bold">Último Sync:</span> <span id="diag-lastsync" class="text-slate-300">Nunca</span></p>
+        </div>
+
+        <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700/40 space-y-2">
+          <h3 class="text-xs font-bold text-slate-400 uppercase">Configuración API</h3>
+          <p class="text-sm"><span class="font-bold">URL Base:</span> <span id="diag-apiurl" class="text-slate-300 text-[10px] break-all">Cargando...</span></p>
+          <p class="text-sm"><span class="font-bold">Token:</span> <span id="diag-token" class="text-slate-300">●●●●●●●</span></p>
+        </div>
+
+        <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700/40 space-y-2">
+          <h3 class="text-xs font-bold text-slate-400 uppercase">Datos en Memoria</h3>
+          <p class="text-sm"><span class="font-bold">Cuentas:</span> <span id="diag-cuentas" class="text-emerald-400">0</span></p>
+          <p class="text-sm"><span class="font-bold">Movimientos:</span> <span id="diag-movimientos" class="text-emerald-400">0</span></p>
+          <p class="text-sm"><span class="font-bold">Categorías:</span> <span id="diag-categorias" class="text-emerald-400">0</span></p>
+        </div>
+
+        <button onclick="actualizarDiagnostico()" class="w-full bg-emerald-500 text-white font-bold py-2 rounded-xl hover:bg-emerald-400 transition">
+          <i class="fa-solid fa-rotate"></i> Actualizar Diagnóstico
+        </button>
+      </div>
+    </div>
+
+    <!-- NOTIFICACIÓN TOAST (Sistema de notificaciones flotantes) -->
+    <div id="toast-container" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none space-y-2"></div>
+
+    <!-- MODAL CONFIRMACIÓN GENÉRICA -->
+    <div id="modal-confirm" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+      <div class="bg-slate-900 p-6 rounded-2xl border border-slate-700 max-w-xs shadow-xl">
+        <h3 id="confirm-title" class="text-lg font-bold text-white mb-2">Confirmar</h3>
+        <p id="confirm-message" class="text-sm text-slate-300 mb-4"></p>
+        <div class="flex gap-3 justify-end">
+          <button onclick="cerrarConfirm(false)" class="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition">Cancelar</button>
+          <button id="confirm-btn" onclick="cerrarConfirm(true)" class="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-400 transition">Confirmar</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbyIC3yGswFCICi79jewstcjRmyluREb22mtBxVUlJuyR8CPTc23KSdK36NXaEDYRFuv/exec"; 
-    const TOKEN = "A_gam3_n0n-7&7";
-
-    let currentTab = 'dashboard';
-    let openModals = [];
-    let cuentasGlobales = [];
-    let movimientosGlobales = [];
-    let categoriasGlobales = [];
-    let dashboardGlobal = {};
-    let desgloseAbierto = false;
-    let miGrafico = null;
-
-    const DEFAULT_CATEGORIES = [
-      "Alimentación", "Transporte", "Cuentas Fijas", "Ocio", "Salud", "Ahorro", "Otros"
-    ];
-
-    const formatMoneda = (valor) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(valor || 0);
-
-    // --- ARRANQUE ---
-    document.addEventListener("DOMContentLoaded", () => {
-      history.replaceState({ tab: 'dashboard', openModals: [] }, '');
-
-      window.onpopstate = function (e) {
-        if (e.state) {
-          const targetModals = e.state.openModals || [];
-          openModals.forEach(id => { if (!targetModals.includes(id)) execCloseModal(id); });
-          targetModals.forEach(id => { if (!openModals.includes(id)) execOpenModal(id); });
-          openModals = [...targetModals];
-          if (e.state.tab && e.state.tab !== currentTab) execSwitchTab(e.state.tab);
-        }
-      };
-
-      initFABPosition();
-      inicializarFechaHoy();
-      forzarSincronizacion();
-
-      document.getElementById("movMonto").addEventListener("input", actualizarCalculoCuota);
-      document.getElementById("movCuotas").addEventListener("input", actualizarCalculoCuota);
-    });
-
-    function inicializarFechaHoy() {
-      const hoy = new Date();
-      const yyyy = hoy.getFullYear();
-      const mm = String(hoy.getMonth() + 1).padStart(2, '0');
-      const dd = String(hoy.getDate()).padStart(2, '0');
-      document.getElementById("movFecha").value = `${yyyy}-${mm}-${dd}`;
-    }
-
-    // --- POSICIÓN DEL FAB BOTÓN "+" ---
-    function initFABPosition() {
-      const savedPos = localStorage.getItem('fluxi_fab_pos') || 'center';
-      setFabPosition(savedPos);
-    }
-
-    function setFabPosition(position) {
-      const fab = document.getElementById('fab-container');
-      fab.classList.remove('left-6', 'right-6', 'left-1/2', '-translate-x-1/2');
-      
-      if (position === 'left') {
-        fab.classList.add('left-6');
-      } else if (position === 'right') {
-        fab.classList.add('right-6');
-      } else {
-        fab.classList.add('left-1/2', '-translate-x-1/2');
-      }
-
-      localStorage.setItem('fluxi_fab_pos', position);
-      
-      ['left', 'center', 'right'].forEach(pos => {
-        const btn = document.getElementById(`btn-fab-${pos}`);
-        if (btn) {
-          btn.className = "py-2.5 rounded-lg text-xs font-bold transition";
-          if (pos === position) {
-            btn.classList.add('bg-emerald-500', 'text-white', 'shadow-md');
-          } else {
-            btn.classList.add('text-slate-400', 'hover:text-white', 'bg-transparent');
-          }
-        }
-      });
-    }
-
-    // --- NAVEGACIÓN SPA ---
-    function switchTab(tabId) {
-      if (tabId === currentTab) return;
-      history.pushState({ tab: tabId, openModals: [...openModals] }, '');
-      execSwitchTab(tabId);
-    }
-
-    function execSwitchTab(tabId) {
-      ['dashboard', 'movimientos', 'cuentas', 'ajustes'].forEach(id => {
-        document.getElementById(`view-${id}`).classList.add('hidden');
-        document.getElementById(`tab-${id}`).classList.replace('text-emerald-400', 'text-slate-500');
-      });
-      document.getElementById(`view-${tabId}`).classList.remove('hidden');
-      document.getElementById(`tab-${tabId}`).classList.replace('text-slate-500', 'text-emerald-400');
-      currentTab = tabId;
-      if (tabId === 'movimientos') renderizarHistorialMovimientos();
-    }
-
-    // --- MODALES ---
-    function triggerOpenModal(modalId) {
-      execOpenModal(modalId);
-      openModals.push(modalId);
-      history.pushState({ tab: currentTab, openModals: [...openModals] }, '');
-    }
-
-    function triggerCloseModal(modalId) { history.back(); }
-
-    function execOpenModal(modalId) {
-      const modal = document.getElementById(modalId);
-      modal.classList.remove('hidden');
-      setTimeout(() => { modal.classList.replace('modal-hidden', 'modal-visible'); }, 10);
-    }
-
-    function execCloseModal(modalId) {
-      const modal = document.getElementById(modalId);
-      modal.classList.replace('modal-visible', 'modal-hidden');
-      setTimeout(() => modal.classList.add('hidden'), 250);
-    }
-
-    // --- INTERACCIÓN DESGLOSE SALDO NETO ---
-    function toggleDesgloseNeto() {
-      desgloseAbierto = !desgloseAbierto;
-      const comp = document.getElementById("desglose-compartment");
-      const icon = document.getElementById("desglose-icon");
-      if (desgloseAbierto) {
-        comp.style.maxHeight = "500px"; 
-        comp.style.opacity = "1"; 
-        comp.style.marginTop = "16px";
-        icon.style.transform = "rotate(180deg)";
-        calcularDesglose();
-      } else {
-        comp.style.maxHeight = "0"; 
-        comp.style.opacity = "0"; 
-        comp.style.marginTop = "0";
-        icon.style.transform = "rotate(0deg)";
-      }
-    }
-
-    function calcularDesglose() {
-      let actCLP = 0, actUSD = 0, deuCLP = 0, deuUSD = 0;
-      let dValor = Number(dashboardGlobal["Valor_Dolar"]) || 950; 
-      cuentasGlobales.forEach(c => {
-        let val = Number(c.Saldo_Actual) || 0;
-        if (c.Tipo === 'Credito') { 
-          c.Moneda === 'USD' ? deuUSD += Math.abs(val) : deuCLP += Math.abs(val); 
-        } else { 
-          c.Moneda === 'USD' ? actUSD += val : actCLP += val; 
-        }
-      });
-      document.getElementById("desgloseActivosCLP").innerText = formatMoneda(actCLP);
-      document.getElementById("desgloseActivosUSD").innerText = `US$ ${actUSD} (${formatMoneda(actUSD * dValor)})`;
-      document.getElementById("desgloseDeudasCLP").innerText = formatMoneda(deuCLP);
-      document.getElementById("desgloseDeudasUSD").innerText = `US$ ${deuUSD} (${formatMoneda(deuUSD * dValor)})`;
-      document.getElementById("desgloseDolarValor").innerText = `$${dValor} CLP`;
-    }
-
-    // --- CARGA DE DATOS ASÍNCRONA RESILIENTE ---
-    // Evita congelamientos cargando cada módulo por separado con try/catch individual
-    async function forzarSincronizacion() {
-      document.getElementById("status").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Cargando`;
-      document.getElementById("api-error-banner").classList.add("hidden");
-
-      let errorCarga = false;
-
-      try {
-        await cargarDashboard();
-      } catch (e) {
-        console.error("Fallo de Dashboard:", e);
-        errorCarga = true;
-      }
-
-      try {
-        await cargarCuentas();
-      } catch (e) {
-        console.error("Fallo de Cuentas:", e);
-        errorCarga = true;
-      }
-
-      try {
-        await cargarCategoriasDrive();
-      } catch (e) {
-        console.error("Fallo de Categorías:", e);
-      }
-
-      try {
-        await cargarMovimientos();
-      } catch (e) {
-        console.error("Fallo de Movimientos:", e);
-        errorCarga = true;
-      }
-
-      if (errorCarga) {
-        document.getElementById("status").innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-500"></i> Parcial`;
-        document.getElementById("api-error-banner").classList.remove("hidden");
-      } else {
-        document.getElementById("status").innerHTML = `<i class="fa-solid fa-wifi"></i> En línea`;
-        document.getElementById("api-error-banner").classList.add("hidden");
-      }
-    }
-
-    async function cargarDashboard() {
-      const res = await fetch(`${API_URL}?action=getDashboard`);
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      dashboardGlobal = data;
-      document.getElementById("dashNeto").innerText = formatMoneda(data.Saldo_Neto_Real);
-      document.getElementById("dashDeudaCLP").innerText = formatMoneda(data.Deuda_TC_CLP);
-      document.getElementById("dashDeudaUSD").innerText = "US$ " + (data.Deuda_TC_USD || 0);
-    }
-
-    async function cargarCuentas() {
-      const res = await fetch(`${API_URL}?action=getCuentas`);
-      cuentasGlobales = await res.json();
-      
-      const selMov = document.getElementById("movCuenta");
-      const filCta = document.getElementById("filtroCuenta");
-      selMov.innerHTML = ""; 
-      filCta.innerHTML = `<option value="">Todas las Cuentas</option>`;
-      
-      const list = document.getElementById("lista-cuentas");
-      list.innerHTML = "";
-      
-      cuentasGlobales.forEach(c => {
-        selMov.innerHTML += `<option value="${c.ID_Cuenta}">${c.Nombre}</option>`;
-        filCta.innerHTML += `<option value="${c.ID_Cuenta}">${c.Nombre}</option>`;
-        
-        const isTC = c.Tipo === 'Credito';
-        const colorSaldo = c.Saldo_Actual < 0 ? 'text-red-400' : 'text-emerald-400';
-        const icon = isTC ? 'fa-credit-card' : 'fa-building-columns';
-        const badgeColor = isTC ? 'bg-indigo-500/20 text-indigo-400' : 'bg-emerald-500/20 text-emerald-400';
-
-        list.innerHTML += `
-          <div class="bg-slate-800/60 p-4 rounded-2xl flex justify-between border border-slate-700/40">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300">
-                <i class="fa-solid ${icon} text-sm"></i>
-              </div>
-              <div>
-                <h3 class="font-extrabold text-sm text-white">${c.Nombre}</h3>
-                <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${badgeColor}">${c.Tipo}</span>
-              </div>
-            </div>
-            <div class="text-right">
-              <span class="block text-sm font-black ${colorSaldo}">${c.Moneda === 'USD' ? 'US$' : ''}${formatMoneda(c.Saldo_Actual).replace('$', '')}</span>
-              <span class="text-[9px] text-slate-500 uppercase font-semibold">Balance</span>
-            </div>
-          </div>`;
-      });
-    }
-
-    async function cargarMovimientos() {
-      const res = await fetch(`${API_URL}?action=getMovimientos`);
-      movimientosGlobales = await res.json();
-      if (currentTab === 'movimientos') renderizarHistorialMovimientos();
-      renderizarGrafico(movimientosGlobales);
-    }
-
-    async function cargarCategoriasDrive() {
-      const res = await fetch(`${API_URL}?action=getCategorias`);
-      const cat = await res.json();
-      categoriasGlobales = cat;
-      
-      const sMov = document.getElementById("movCat");
-      const sFil = document.getElementById("filtroCategoria");
-      const lAdm = document.getElementById("lista-categorias-admin");
-      
-      sMov.innerHTML = ""; 
-      sFil.innerHTML = `<option value="">Todas las Categorías</option>`; 
-      lAdm.innerHTML = "";
-      
-      cat.forEach(c => {
-        sMov.innerHTML += `<option value="${c}">${c}</option>`;
-        sFil.innerHTML += `<option value="${c}">${c}</option>`;
-        
-        const isDefault = DEFAULT_CATEGORIES.includes(c);
-        lAdm.innerHTML += `
-          <div class="flex justify-between p-3 bg-slate-800 rounded-xl border border-slate-700/40 text-sm font-bold items-center">
-            <span>${c}</span>
-            ${isDefault ? 
-              `<span class="text-[8px] bg-slate-700 text-slate-400 px-2 py-1 rounded">Sistema</span>` : 
-              `<button onclick="eliminarCategoriaDrive('${c}')" class="text-red-400"><i class="fa-solid fa-trash"></i></button>`
-            }
-          </div>`;
-      });
-    }
-
-    // --- ENVÍO DE DATOS RESILIENTE A GOOGLE ---
-    async function enviarAGoogle(payload) {
-      if (!navigator.onLine) { 
-        alert("Sin conexión. Conéctate a internet para poder enviar esta transacción."); 
-        throw new Error("Offline"); 
-      }
-      try {
-        const res = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        document.getElementById("status").innerHTML = `<i class="fa-solid fa-check"></i> Sincronizado`;
-      } catch (err) {
-        document.getElementById("status").innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-400"></i> Error`;
-        alert("Error de Sincronización: " + err.message);
-        throw err;
-      }
-    }
-
-    // --- FORMULARIO NUEVO/EDICIÓN ---
-    document.getElementById("movForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      document.getElementById("status").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando`;
-      
-      const partesF = document.getElementById("movFecha").value.split("-");
-      const fechaCl = `${partesF[2]}/${partesF[1]}/${partesF[0]}`;
-      const idEdit = document.getElementById("editingId").value;
-      
-      let desc = document.getElementById("movDesc").value;
-      const cuotas = Number(document.getElementById("movCuotas").value) || 1;
-      if (cuotas > 1 && !esEdicion()) {
-        desc += ` (En ${cuotas} cuotas)`;
-      }
-
-      const payload = {
-        action: idEdit ? "editMovimiento" : "addMovimiento",
-        secret_token: TOKEN,
-        ID_Mov: idEdit || Date.now(),
-        Fecha: fechaCl,
-        Descripcion: desc,
-        Cuenta_Origen: document.getElementById("movCuenta").value,
-        Categoria: document.getElementById("movCat").value,
-        Tipo_Mov: document.getElementById("movTipo").value,
-        Monto: Number(document.getElementById("movMonto").value),
-        Moneda: document.getElementById("movMoneda").value,
-        Frecuencia: document.getElementById("movFrecuencia").value,
-        Cuotas: cuotas
-      };
-
-      try {
-        await enviarAGoogle(payload);
-        triggerCloseModal('modal-movimiento');
-        
-        document.getElementById("status").innerHTML = `<i class="fa-solid fa-calculator fa-bounce"></i> Recalculando...`;
-        setTimeout(() => {
-          forzarSincronizacion();
-        }, 1800);
-      } catch (e) {}
-    });
-
-    function esEdicion() {
-      return document.getElementById("editingId").value !== "";
-    }
-
-    // --- HISTORIAL ---
-    function renderizarHistorialMovimientos() {
-      const lista = document.getElementById("lista-movimientos");
-      const fTxt = document.getElementById("filtroTexto").value.toLowerCase();
-      const fCat = document.getElementById("filtroCategoria").value;
-      const fCta = document.getElementById("filtroCuenta").value;
-      
-      let filtrados = movimientosGlobales.filter(m => {
-        const matchCat = !fCat || m.Categoria === fCat;
-        const matchCta = !fCta || m.Cuenta_Origen === fCta;
-        const matchTxt = !fTxt || 
-                         m.Descripcion.toLowerCase().includes(fTxt) || 
-                         String(m.Monto).includes(fTxt) || 
-                         m.Categoria.toLowerCase().includes(fTxt);
-        return matchCat && matchCta && matchTxt;
-      });
-      
-      document.getElementById("historial-total").innerText = `${filtrados.length} txns`;
-      lista.innerHTML = "";
-
-      if (filtrados.length === 0) {
-        lista.innerHTML = `
-          <div class="text-center py-12 bg-slate-800/20 rounded-2xl border border-slate-800/40">
-            <i class="fa-solid fa-receipt text-slate-600 text-3xl mb-2"></i>
-            <p class="text-xs text-slate-500 font-bold">No se encontraron movimientos</p>
-          </div>`;
-        return;
-      }
-
-      filtrados.forEach(m => {
-        const esIngreso = m.Tipo_Mov === 'Ingreso';
-        const esTrsf = m.Tipo_Mov === 'Transferencia';
-        const color = esIngreso ? 'text-emerald-400' : (esTrsf ? 'text-blue-400' : 'text-rose-400');
-        const ctaNombre = cuentasGlobales.find(c => c.ID_Cuenta === m.Cuenta_Origen)?.Nombre || m.Cuenta_Origen || "Billetera";
-
-        lista.innerHTML += `
-        <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/35 flex justify-between items-center">
-           <div class="flex-1 min-w-0 pr-2">
-             <span class="text-[9px] text-slate-500 font-extrabold uppercase block">${m.Fecha} • ${ctaNombre}</span>
-             <h4 class="font-extrabold text-sm truncate text-slate-100">${m.Descripcion}</h4>
-             <span class="inline-block text-[9px] bg-slate-900 text-slate-400 px-2 py-0.5 rounded-md uppercase font-bold mt-1">${m.Categoria}</span>
-           </div>
-           <div class="text-right flex flex-col items-end gap-1.5 shrink-0">
-             <span class="text-sm font-black ${color}">${esIngreso ? '+':'-'} ${m.Moneda==='USD'?'US$':''}${formatMoneda(m.Monto).replace('$','')}</span>
-             <div class="flex gap-1">
-               <button onclick="editarMovimientoUI('${m.ID_Mov}')" class="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-md"><i class="fa-solid fa-pencil"></i></button>
-               <button onclick="eliminarMovimientoDrive('${m.ID_Mov}')" class="text-[10px] bg-rose-500/10 text-rose-400 px-2 py-1 rounded-md"><i class="fa-solid fa-trash"></i></button>
-             </div>
-           </div>
-        </div>`;
-      });
-    }
-
-    function filtrarMovimientos() { renderizarHistorialMovimientos(); }
-
-    function editarMovimientoUI(idMov) {
-      const mov = movimientosGlobales.find(m => String(m.ID_Mov) === String(idMov));
-      if (!mov) return;
-
-      document.getElementById("movimiento-modal-title").innerText = "Editar Movimiento";
-      document.getElementById("movForm-submit-btn").innerText = "Guardar Cambios";
-      document.getElementById("editingId").value = mov.ID_Mov;
-      
-      document.getElementById("contenedor-importador-notif").classList.add("hidden");
-
-      setTipoMov(mov.Tipo_Mov);
-      document.getElementById("movMonto").value = mov.Monto;
-      
-      let descLimpia = mov.Descripcion;
-      if (descLimpia.includes(" (En ")) {
-        descLimpia = descLimpia.substring(0, descLimpia.indexOf(" (En "));
-      }
-      document.getElementById("movDesc").value = descLimpia;
-
-      const partes = mov.Fecha.split("/");
-      if (partes.length === 3) {
-        document.getElementById("movFecha").value = `${partes[2]}-${partes[1]}-${partes[0]}`;
-      }
-
-      document.getElementById("movFrecuencia").value = mov.Frecuencia || "Unica vez";
-      document.getElementById("movCuenta").value = mov.Cuenta_Origen;
-      document.getElementById("movMoneda").value = mov.Moneda || "CLP";
-      document.getElementById("movCat").value = mov.Categoria;
-      document.getElementById("movCuotas").value = mov.Cuotas || 1;
-
-      verificarTipoCuenta();
-      triggerOpenModal('modal-movimiento');
-    }
-
-    async function eliminarMovimientoDrive(id) {
-      if (!confirm("¿Deseas eliminar permanentemente este movimiento de tu Google Sheets?")) return;
-      document.getElementById("status").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Eliminando`;
-      try {
-        await enviarAGoogle({ action: "deleteMovimiento", secret_token: TOKEN, ID_Mov: id });
-        setTimeout(() => { forzarSincronizacion(); }, 1500);
-      } catch (e) {}
-    }
-
-    // --- CREAR NUEVA CUENTA ---
-    document.getElementById("cuentaForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      document.getElementById("status").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Registrando`;
-      const tipo = document.getElementById("accType").value;
-      const cupo = Number(document.getElementById("accLimit").value) || 0;
-      const payload = {
-        action: "addCuenta",
-        secret_token: TOKEN,
-        ID_Cuenta: "CTA_" + Date.now(),
-        Nombre: document.getElementById("accName").value,
-        Tipo: tipo,
-        Cupo_Total: tipo === 'Credito' ? cupo : 0,
-        Moneda: "CLP",
-        Dia_Corte: 20,
-        Dia_Pago: 5,
-        Saldo_Inicial: tipo === 'Credito' ? 0 : cupo
-      };
-      try {
-        await enviarAGoogle(payload);
-        triggerCloseModal('modal-cuenta');
-        setTimeout(() => { forzarSincronizacion(); }, 1500);
-      } catch(e) {}
-    });
-
-    // --- NUEVO MOVIMIENTO ---
-    function abrirModalNuevoMovimiento() {
-      document.getElementById("movimiento-modal-title").innerText = "Nuevo Movimiento";
-      document.getElementById("movForm-submit-btn").innerText = "Confirmar Transacción";
-      document.getElementById("editingId").value = "";
-      document.getElementById("movForm").reset();
-      document.getElementById("contenedor-importador-notif").classList.remove("hidden");
-      inicializarFechaHoy();
-      verificarTipoCuenta();
-      triggerOpenModal('modal-movimiento');
-    }
-
-    // --- DETECTORES DE TC / CUOTAS ---
-    function verificarTipoCuenta() {
-      const selectCta = document.getElementById("movCuenta");
-      const ctaId = selectCta.value;
-      const ctaElegida = cuentasGlobales.find(c => c.ID_Cuenta === ctaId);
-      const seccionCuotas = document.getElementById("seccion-cuotas");
-      
-      if (ctaElegida && ctaElegida.Tipo === 'Credito') {
-        seccionCuotas.classList.remove("hidden");
-        actualizarCalculoCuota();
-      } else {
-        seccionCuotas.classList.add("hidden");
-        document.getElementById("movCuotas").value = "1";
-      }
-    }
-
-    function actualizarCalculoCuota() {
-      const monto = Number(document.getElementById("movMonto").value) || 0;
-      const cuotas = Number(document.getElementById("movCuotas").value) || 1;
-      const calculoDiv = document.getElementById("calculo-cuota");
-      
-      if (monto > 0 && cuotas > 1) {
-        const costoMensual = Math.round(monto / cuotas);
-        calculoDiv.innerText = `${formatMoneda(costoMensual)} / mes`;
-      } else {
-        calculoDiv.innerText = "$0 / mes";
-      }
-    }
-
-    // --- GESTIÓN CATEGORÍAS ---
-    async function agregarNuevaCategoriaDrive() {
-      const input = document.getElementById("catNuevaNombre");
-      const nombre = input.value.trim();
-      if (!nombre) return;
-
-      if (categoriasGlobales.map(c => c.toLowerCase()).includes(nombre.toLowerCase())) {
-        input.value = ""; return;
-      }
-      document.getElementById("status").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando`;
-      try {
-        await enviarAGoogle({ action: "addCategoria", secret_token: TOKEN, Nombre: nombre });
-        input.value = "";
-        setTimeout(() => { cargarCategoriasDrive(); }, 1200);
-      } catch(e) {}
-    }
-
-    async function eliminarCategoriaDrive(nombre) {
-      if (!confirm(`¿Eliminar la categoría "${nombre}" de Drive?`)) return;
-      document.getElementById("status").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Eliminando`;
-      try {
-        await enviarAGoogle({ action: "deleteCategoria", secret_token: TOKEN, Nombre: nombre });
-        setTimeout(() => { cargarCategoriasDrive(); }, 1200);
-      } catch(e) {}
-    }
-
-    // --- GRÁFICO REAL CHART.JS DESDE MOVIMIENTOS ---
-    function renderizarGrafico(movimientos) {
-      const ctx = document.getElementById('chartFinanzas').getContext('2d');
-      const nombresMeses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-      const hoy = new Date();
-      let labels = [];
-      let ingresosMes = [0, 0, 0, 0, 0, 0];
-      let egresosMes = [0, 0, 0, 0, 0, 0];
-
-      for (let i = 5; i >= 0; i--) {
-        let d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
-        labels.push({
-          texto: nombresMeses[d.getMonth()] + " " + String(d.getFullYear()).slice(-2),
-          mes: d.getMonth(),
-          anio: d.getFullYear()
-        });
-      }
-
-      movimientos.forEach(m => {
-        if (!m.Fecha || !m.Monto) return;
-        const partes = String(m.Fecha).split("/");
-        if (partes.length < 3) return;
-        const mesMov = parseInt(partes[1], 10) - 1;
-        const anioMov = parseInt(partes[2], 10);
-        const monto = Number(m.Monto);
-
-        labels.forEach((l, idx) => {
-          if (l.mes === mesMov && l.anio === anioMov) {
-            if (m.Tipo_Mov === "Ingreso") ingresosMes[idx] += monto;
-            else if (m.Tipo_Mov === "Egreso") egresosMes[idx] += monto;
-          }
-        });
-      });
-
-      if (miGrafico) miGrafico.destroy();
-
-      miGrafico = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels.map(l => l.texto),
-          datasets: [
-            {
-              label: 'Ingresos',
-              data: ingresosMes,
-              borderColor: '#34d399',
-              backgroundColor: 'rgba(52, 211, 153, 0.08)',
-              borderWidth: 2.5,
-              tension: 0.35,
-              fill: true
-            },
-            {
-              label: 'Gastos',
-              data: egresosMes,
-              borderColor: '#f87171',
-              backgroundColor: 'rgba(248, 113, 113, 0.03)',
-              borderWidth: 2,
-              tension: 0.35,
-              fill: true
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 9 } } },
-            y: { grid: { color: 'rgba(51, 65, 85, 0.2)' }, ticks: { color: '#64748b', font: { size: 8 } } }
-          }
-        }
-      });
-    }
-
-    // --- ALERTA INTELIGENTE ---
-    function procesarAlertasInteligentes() {
-      const panel = document.getElementById("panel-alertas");
-      panel.innerHTML = "";
-      let alertasGeneradas = [];
-
-      if (dashboardGlobal["Saldo_Neto_Real"] !== undefined) {
-        const saldoNeto = Number(dashboardGlobal["Saldo_Neto_Real"]) || 0;
-        if (saldoNeto < 50000 && saldoNeto > 0) {
-          alertasGeneradas.push({
-            tipo: "error", icon: "fa-triangle-exclamation", titulo: "Liquidez muy baja",
-            desc: `Tu Saldo Neto Real es de ${formatMoneda(saldoNeto)}. Evita gastos innecesarios.`
-          });
-        }
-      }
-
-      cuentasGlobales.forEach(cta => {
-        if (cta.Tipo === 'Credito') {
-          const cupoTotal = Number(cta.Cupo_Total) || 0;
-          const deudaActual = Math.abs(Number(cta.Saldo_Actual) || 0);
-          
-          if (cupoTotal > 0 && (deudaActual / cupoTotal) > 0.7) {
-            const pct = Math.round((deudaActual / cupoTotal) * 100);
-            alertasGeneradas.push({
-              tipo: "warning", icon: "fa-shield-halved", titulo: `Uso elevado en ${cta.Nombre}`,
-              desc: `Has ocupado el ${pct}% de tu cupo disponible.`
-            });
-          }
-        }
-      });
-
-      if (alertasGeneradas.length === 0) {
-        panel.innerHTML = `
-          <div class="p-4 bg-slate-800/30 rounded-2xl border border-slate-800 text-center text-xs text-slate-500">
-            <i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i> Todo en orden en tus cuentas de Sheets.
-          </div>`;
-      } else {
-        alertasGeneradas.forEach(a => {
-          let bg = a.tipo === 'error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-amber-500/10 border-amber-500/20 text-amber-400';
-          panel.innerHTML += `
-            <div class="p-4 rounded-2xl border flex gap-3.5 ${bg}">
-              <div class="text-lg"><i class="fa-solid ${a.icon}"></i></div>
-              <div><h4 class="font-extrabold text-sm text-slate-100">${a.titulo}</h4><p class="text-xs text-slate-400 mt-1">${a.desc}</p></div>
-            </div>`;
-        });
-      }
-    }
-
-    // --- LECTOR DE NOTIFICACIONES ---
-    function procesarNotificacionPegada() {
-      const texto = document.getElementById("importText").value;
-      if (!texto.trim()) return;
-
-      const regexMonto = /(?:\$|CLP)?\s?(\d{1,3}(?:\.\d{3})+|\d+)/;
-      const matchMonto = texto.match(regexMonto);
-      
-      if (matchMonto) {
-        const numeroLimpio = matchMonto[1].replace(/\./g, "");
-        document.getElementById("movMonto").value = numeroLimpio;
-      }
-
-      let descripcionExtraida = "Movimiento Importado";
-      const textoBajo = texto.toLowerCase();
-
-      const patronesComercio = [
-        /en\s+([A-Za-z0-9\s_]+?)(?:\s+con|\s+el|\s+por|\s+monto|\.|$)/,
-        /a\s+([A-Za-z0-9\s_]+?)(?:\s+con|\s+el|\s+por|\s+monto|\.|$)/,
-        /de\s+([A-Za-z0-9\s_]+?)(?:\s+con|\s+el|\s+por|\s+monto|\.|$)/
-      ];
-
-      for (let regex of patronesComercio) {
-        const match = texto.match(regex);
-        if (match && match[1]) {
-          descripcionExtraida = match[1].trim();
-          break;
-        }
-      }
-
-      if (descripcionExtraida === "Movimiento Importado" && texto.length < 40) {
-        descripcionExtraida = texto;
-      }
-
-      document.getElementById("movDesc").value = descripcionExtraida;
-
-      let categoriaDetectada = "Otros";
-      const categoriasMap = {
-        "Alimentación": ["lider", "jumbo", "unimarc", "tottus", "uber eats", "pedidosya", "restaurante", "mcdonald", "starbucks", "comida", "supermercado"],
-        "Transporte": ["uber", "cabify", "didi", "metro", "bip", "copec", "shell", "petrobras", "bencina", "peaje"],
-        "Cuentas Fijas": ["vtr", "movistar", "entel", "enel", "aguas", "gasco", "netflix", "spotify", "gimnasio", "suscripcion", "condominio"],
-        "Ocio": ["cine", "cineplanet", "cinemark", "pub", "bar", "playstation", "steam", "falabella", "ripley", "paris", "aliexpress", "shein"],
-        "Salud": ["farmacia", "cruz verde", "ahumada", "salcobrand", "clinica", "medico", "dentista"]
-      };
-
-      for (let [cat, palabras] of Object.entries(categoriasMap)) {
-        if (palabras.some(p => textoBajo.includes(p))) {
-          categoriaDetectada = cat;
-          break;
-        }
-      }
-      document.getElementById("movCat").value = categoriaDetectada;
-
-      if (cuentasGlobales.length > 0) {
-        const cuentaMatch = cuentasGlobales.find(cta => 
-          textoBajo.includes(cta.Nombre.toLowerCase()) || 
-          (cta.Tipo === 'Credito' && (textoBajo.includes("credito") || textoBajo.includes("tc") || textoBajo.includes("tarjeta")))
-        );
-        if (cuentaMatch) {
-          document.getElementById("movCuenta").value = cuentaMatch.ID_Cuenta;
-          verificarTipoCuenta();
-        }
-      }
-
-      document.getElementById("importText").value = "";
-      alert("¡Autocompletado con éxito! Revisa los campos antes de confirmar.");
-    }
-
-    function setTipoMov(tipo) {
-      document.getElementById('movTipo').value = tipo;
-      ['btn-egreso', 'btn-ingreso', 'btn-transfer'].forEach(id => {
-        document.getElementById(id).className = "flex-1 py-2 text-xs font-bold text-slate-400 rounded-md transition-all";
-      });
-      const act = tipo === 'Egreso' ? 'btn-egreso' : (tipo === 'Ingreso' ? 'btn-ingreso' : 'btn-transfer');
-      document.getElementById(act).className = "flex-1 py-2 text-xs font-bold bg-slate-700 text-white rounded-md shadow border border-slate-600/30";
-    }
-
-    function diagnosticarPlanilla() {
-      let msj = `--- INFORME ---\n`;
-      msj += `Cuentas: ${cuentasGlobales.length} registradas\n`;
-      msj += `Últimos Movimientos: ${movimientosGlobales.length} leídos\n`;
-      msj += `Dashboard Saldo: ${dashboardGlobal["Saldo_Neto_Real"] || 'No se lee'}\n`;
-      alert(msj);
-    }
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>
