@@ -694,3 +694,34 @@ function renderizarGrafico(datos) {
   // Implementar si es necesario
   console.log("Gráfico listo para render con", datos.length, "movimientos");
 }
+
+// ============================================
+// LÓGICA DE LOGIN Y CONFIGURACIÓN INICIAL
+// ============================================
+
+document.getElementById("loginForm")?.addEventListener("submit", (e) => {
+  e.preventDefault();
+  
+  const url = document.getElementById("loginUrl").value.trim();
+  const token = document.getElementById("loginToken").value.trim();
+  
+  if (!url || !token) {
+    mostrarToast('Debes ingresar la URL y el Token', 'error');
+    return;
+  }
+  
+  // Guardar en variables globales y localStorage
+  guardarConfiguracionAPI(url, token);
+  
+  // Cerrar modal y preparar interfaz
+  execCloseModal('modal-login');
+  mostrarToast('Credenciales guardadas. Conectando...', 'info');
+  
+  // Inicializar la app
+  history.replaceState({ tab: 'dashboard', openModals: [] }, '');
+  initFABPosition();
+  inicializarFechaHoy();
+  
+  // Iniciar sincronización de datos
+  forzarSincronizacion();
+});
