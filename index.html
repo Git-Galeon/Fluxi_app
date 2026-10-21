@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Fluxi - Finanzas Pro</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
@@ -252,9 +252,13 @@
               <span class="flex items-center gap-3"><i class="fa-solid fa-tags text-emerald-400"></i> Gestionar Categorías (Drive)</span>
               <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
             </button>
+            <button onclick="if (pedirToken(true)) forzarSincronizacion()" class="w-full text-left p-4 flex justify-between items-center hover:bg-slate-850 transition">
+              <span class="flex items-center gap-3"><i class="fa-solid fa-key text-emerald-400"></i> Clave de acceso</span>
+              <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
+            </button>
           </div>
         </div>
-        <p class="text-center text-[10px] text-slate-600">Fluxi App v1.7.0 • Edición Money Manager</p>
+        <p class="text-center text-[10px] text-slate-600">Fluxi App v1.8.0 • Edición Money Manager</p>
       </section>
 
     </main>
