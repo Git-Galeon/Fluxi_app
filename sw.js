@@ -1,54 +1,53 @@
-const CACHE_NAME = 'fluxi-cache-v1.6';
+const CACHE_NAME = 'fluxi-cache-v1.8.0';
 
-// Solo almacenamos en caché los archivos locales de tu repositorio
+// Archivos locales de la app (subir la versión arriba cada vez que publiques cambios)
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
+  './app.js',
   './manifest.json',
   './icon.svg'
 ];
 
-// Instalar Service Worker y guardar en caché local
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(ASSETS_TO_CACHE))
+      // add() individual: si un archivo falta (ej. icon.svg) no se cae toda la instalación
+      .then((cache) => Promise.all(
+        ASSETS_TO_CACHE.map((url) => cache.add(url).catch((e) => console.warn('SW: no se cacheó', url, e)))
+      ))
       .then(() => self.skipWaiting())
   );
 });
 
-// Interceptar peticiones y servir desde caché si no hay red
-self.addEventListener('fetch', (event) => {
-  // Ignorar peticiones a Google Apps Script y CDNs externos (evita errores CORS en consola)
-  if (
-    event.request.url.includes('script.google.com') || 
-    event.request.url.includes('cdn.tailwindcss.com') ||
-    event.request.url.includes('cdnjs.cloudflare.com') ||
-    event.request.url.includes('cdn.jsdelivr.net')
-  ) {
-    return; // Deja que el navegador maneje estas peticiones normalmente
-  }
-
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Devuelve la caché si la encuentra, sino busca en internet
-        return response || fetch(event.request);
-      })
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
 });
 
-// Limpiar cachés viejas al actualizar
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  const url = new URL(req.url);
+
+  // Solo GET de nuestro propio origen. Google Apps Script y los CDNs van directo a la red.
+  if (req.method !== 'GET' || url.origin !== self.location.origin) return;
+
+  // Stale-while-revalidate: responde rápido desde caché y actualiza en segundo plano
+  event.respondWith(
+    caches.match(req).then((cached) => {
+      const red = fetch(req)
+        .then((res) => {
+          if (res && res.ok) {
+            const copia = res.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(req, copia));
           }
+          return res;
         })
-      );
+        .catch(() => cached);
+      return cached || red;
     })
   );
 });
