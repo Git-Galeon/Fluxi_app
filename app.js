@@ -1,5 +1,46 @@
-const API_URL = "https://script.google.com/macros/s/AKfycby1jX08m7dgL5K-P9ItmkkLOeLUrle_fwHkiXdgsMnA3kVkW5MBMFJuYNEkGwylfPa9/exec"; 
-const TOKEN = "A_gam3_n0n-7&7";
+const API_URL = "https://script.google.com/macros/s/AKfycby1jX08m7dgL5K-P9ItmkkLOeLUrle_fwHkiXdgsMnA3kVkW5MBMFJuYNEkGwylfPa9/exec";
+
+// El token ya NO vive en el repo: se pide una vez y queda guardado solo en este dispositivo.
+function getToken() { return localStorage.getItem('fluxi_token') || ''; }
+function pedirToken(forzar = false) {
+  const actual = getToken();
+  if (actual && !forzar) return actual;
+  const t = (prompt('Clave de acceso de Fluxi:') || '').trim();
+  if (t) localStorage.setItem('fluxi_token', t);
+  return t;
+}
+
+// Escapa texto antes de insertarlo en innerHTML (evita XSS desde la planilla)
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// Toda comunicación con el backend pasa por aquí (lecturas y escrituras, con token y timeout)
+async function llamarAPI(payload, timeoutMs = 20000) {
+  const token = pedirToken();
+  if (!token) throw new Error('Falta la clave de acceso');
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ ...payload, secret_token: token }),
+      signal: ctrl.signal
+    });
+    if (!res.ok) throw new Error('Error de red (' + res.status + ')');
+    const data = await res.json();
+    if (data && data.error) {
+      if (data.error === 'No autorizado') localStorage.removeItem('fluxi_token');
+      throw new Error(data.error);
+    }
+    return data;
+  } catch (err) {
+    if (err.name === 'AbortError') throw new Error('Tiempo de espera agotado');
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 let currentTab = 'dashboard';
 let openModals = [];
@@ -15,7 +56,11 @@ const DEFAULT_CATEGORIES = [
   "Alimentación", "Transporte", "Cuentas Fijas", "Ocio", "Salud", "Ahorro", "Otros"
 ];
 
-const formatMoneda = (valor) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(valor || 0);
+const _fmt = {
+  CLP: new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }),
+  USD: new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'USD' })
+};
+const formatMoneda = (valor, moneda = 'CLP') => (_fmt[moneda] || _fmt.CLP).format(Number(valor) || 0);
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').then(() => console.log("PWA Ready")).catch(e => console.log("SW Error", e));
@@ -36,6 +81,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   initFABPosition();
   inicializarFechaHoy();
+  try {
+    const guardado = localStorage.getItem('fluxi_cache');
+    if (guardado) aplicarTodo(JSON.parse(guardado));
+  } catch (e) {}
   forzarSincronizacion();
 
   document.getElementById("movMonto").addEventListener("input", actualizarCalculoCuota);
@@ -70,7 +119,7 @@ function showToast(message, type = 'info') {
   }
 
   toast.className += ` ${bg}`;
-  toast.innerHTML = `${icon} <span class="flex-1">${message}</span>`;
+  toast.innerHTML = `${icon} <span class="flex-1">${esc(message)}</span>`;
   container.appendChild(toast);
 
   setTimeout(() => {
@@ -193,9 +242,9 @@ function calcularDesglose() {
     }
   });
   document.getElementById("desgloseActivosCLP").innerText = formatMoneda(actCLP);
-  document.getElementById("desgloseActivosUSD").innerText = `US$ ${actUSD} (${formatMoneda(actUSD * dValor)})`;
+  document.getElementById("desgloseActivosUSD").innerText = `${formatMoneda(actUSD, 'USD')} (${formatMoneda(actUSD * dValor)})`;
   document.getElementById("desgloseDeudasCLP").innerText = formatMoneda(deuCLP);
-  document.getElementById("desgloseDeudasUSD").innerText = `US$ ${deuUSD} (${formatMoneda(deuUSD * dValor)})`;
+  document.getElementById("desgloseDeudasUSD").innerText = `${formatMoneda(deuUSD, 'USD')} (${formatMoneda(deuUSD * dValor)})`;
   document.getElementById("desgloseDolarValor").innerText = `$${dValor} CLP`;
 }
 
@@ -204,15 +253,21 @@ async function forzarSincronizacion() {
   document.getElementById("api-error-banner").classList.add("hidden");
 
   let errorCarga = false;
-  try { await cargarDashboard(); } catch (e) { errorCarga = true; }
-  try { await cargarCuentas(); } catch (e) { errorCarga = true; }
-  try { await cargarCategoriasDrive(); } catch (e) {}
-  try { await cargarMovimientos(); } catch (e) { errorCarga = true; }
+  let msgError = '';
+  try {
+    const d = await llamarAPI({ action: "getAll" });
+    aplicarTodo(d);
+    try { localStorage.setItem('fluxi_cache', JSON.stringify(d)); } catch (e) {}
+  } catch (e) {
+    errorCarga = true;
+    msgError = e.message;
+    console.error(e);
+  }
 
   if (errorCarga) {
     document.getElementById("status").innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-500"></i> Parcial`;
     document.getElementById("api-error-banner").classList.remove("hidden");
-    showToast("Sincronización incompleta. Revisa la red.", "warning");
+    showToast(msgError || "Sincronización incompleta. Revisa la red.", "warning");
   } else {
     document.getElementById("status").innerHTML = `<i class="fa-solid fa-wifi"></i> En línea`;
     document.getElementById("api-error-banner").classList.add("hidden");
@@ -220,19 +275,22 @@ async function forzarSincronizacion() {
   }
 }
 
-async function cargarDashboard() {
-  const res = await fetch(`${API_URL}?action=getDashboard`);
-  const data = await res.json();
-  if (data.error) throw new Error(data.error);
+function aplicarTodo(d) {
+  aplicarDashboard(d.dashboard || {});
+  aplicarCuentas(d.cuentas);          // antes que movimientos (el historial usa los nombres)
+  aplicarCategorias(d.categorias);
+  aplicarMovimientos(d.movimientos);
+}
+
+function aplicarDashboard(data) {
   dashboardGlobal = data;
   document.getElementById("dashNeto").innerText = formatMoneda(data.Saldo_Neto_Real);
   document.getElementById("dashDeudaCLP").innerText = formatMoneda(data.Deuda_TC_CLP);
-  document.getElementById("dashDeudaUSD").innerText = "US$ " + (data.Deuda_TC_USD || 0);
+  document.getElementById("dashDeudaUSD").innerText = formatMoneda(data.Deuda_TC_USD, 'USD');
 }
 
-async function cargarCuentas() {
-  const res = await fetch(`${API_URL}?action=getCuentas`);
-  cuentasGlobales = await res.json();
+function aplicarCuentas(cuentas) {
+  cuentasGlobales = Array.isArray(cuentas) ? cuentas : [];
   
   const selMov = document.getElementById("movCuenta");
   const selDestino = document.getElementById("movCuentaDestino");
@@ -246,9 +304,9 @@ async function cargarCuentas() {
   list.innerHTML = "";
   
   cuentasGlobales.forEach(c => {
-    selMov.innerHTML += `<option value="${c.ID_Cuenta}">${c.Nombre}</option>`;
-    selDestino.innerHTML += `<option value="${c.ID_Cuenta}">${c.Nombre}</option>`;
-    filCta.innerHTML += `<option value="${c.ID_Cuenta}">${c.Nombre}</option>`;
+    selMov.innerHTML += `<option value="${esc(c.ID_Cuenta)}">${esc(c.Nombre)}</option>`;
+    selDestino.innerHTML += `<option value="${esc(c.ID_Cuenta)}">${esc(c.Nombre)}</option>`;
+    filCta.innerHTML += `<option value="${esc(c.ID_Cuenta)}">${esc(c.Nombre)}</option>`;
     
     const isTC = c.Tipo === 'Credito';
     const colorSaldo = c.Saldo_Actual < 0 ? 'text-rose-400' : 'text-emerald-400';
@@ -262,28 +320,26 @@ async function cargarCuentas() {
             <i class="fa-solid ${icon} text-sm"></i>
           </div>
           <div>
-            <h3 class="font-extrabold text-sm text-white">${c.Nombre}</h3>
-            <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${badgeColor}">${c.Tipo}</span>
+            <h3 class="font-extrabold text-sm text-white">${esc(c.Nombre)}</h3>
+            <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${badgeColor}">${esc(c.Tipo)}</span>
           </div>
         </div>
         <div class="text-right">
-          <span class="block text-sm font-black ${colorSaldo}">${c.Moneda === 'USD' ? 'US$' : ''}${formatMoneda(c.Saldo_Actual).replace('$', '')}</span>
+          <span class="block text-sm font-black ${colorSaldo}">${formatMoneda(c.Saldo_Actual, c.Moneda)}</span>
           <span class="text-[9px] text-slate-500 uppercase font-semibold">Balance</span>
         </div>
       </div>`;
   });
 }
 
-async function cargarMovimientos() {
-  const res = await fetch(`${API_URL}?action=getMovimientos`);
-  movimientosGlobales = await res.json();
+function aplicarMovimientos(movs) {
+  movimientosGlobales = Array.isArray(movs) ? movs : [];
   if (currentTab === 'movimientos') renderizarHistorialMovimientos();
-  renderizarGrafico(movimientosGlobales);
+  try { renderizarGrafico(movimientosGlobales); } catch (e) { console.warn("Gráfico no disponible", e); }
 }
 
-async function cargarCategoriasDrive() {
-  const res = await fetch(`${API_URL}?action=getCategorias`);
-  const cat = await res.json();
+function aplicarCategorias(cat) {
+  cat = Array.isArray(cat) ? cat : [];
   categoriasGlobales = cat;
   
   const sMov = document.getElementById("movCat");
@@ -295,39 +351,38 @@ async function cargarCategoriasDrive() {
   lAdm.innerHTML = "";
   
   cat.forEach(c => {
-    sMov.innerHTML += `<option value="${c}">${c}</option>`;
-    sFil.innerHTML += `<option value="${c}">${c}</option>`;
+    sMov.innerHTML += `<option value="${esc(c)}">${esc(c)}</option>`;
+    sFil.innerHTML += `<option value="${esc(c)}">${esc(c)}</option>`;
     
     const isDefault = DEFAULT_CATEGORIES.includes(c);
     lAdm.innerHTML += `
       <div class="flex justify-between p-3 bg-slate-900 rounded-xl border border-slate-800 text-sm font-bold items-center">
-        <span>${c}</span>
+        <span>${esc(c)}</span>
         ${isDefault ? 
           `<span class="text-[8px] bg-slate-950 text-slate-500 border border-slate-850 px-2 py-1 rounded">Sistema</span>` : 
-          `<button onclick="eliminarCategoriaDrive('${c}')" class="text-rose-400 p-1 hover:bg-rose-500/10 rounded transition"><i class="fa-solid fa-trash text-xs"></i></button>`
+          `<button data-nombre="${esc(c)}" onclick="eliminarCategoriaDrive(this.dataset.nombre)" class="text-rose-400 p-1 hover:bg-rose-500/10 rounded transition"><i class="fa-solid fa-trash text-xs"></i></button>`
         }
       </div>`;
   });
 }
 
+let enviando = false;
 async function enviarAGoogle(payload) {
-  if (!navigator.onLine) { 
+  if (enviando) throw new Error("Operación en curso");
+  if (!navigator.onLine) {
     showToast("Sin conexión. Conéctate a internet para poder operar.", "error");
-    throw new Error("Offline"); 
+    throw new Error("Offline");
   }
+  enviando = true;
   try {
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
+    await llamarAPI(payload);
     showToast("Sincronizado con Drive", "success");
   } catch (err) {
     document.getElementById("status").innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-400"></i> Error`;
     showToast("Error de Sincronización: " + err.message, "error");
     throw err;
+  } finally {
+    enviando = false;
   }
 }
 
@@ -348,7 +403,6 @@ document.getElementById("movForm").addEventListener("submit", async (e) => {
 
   const payload = {
     action: idEdit ? "editMovimiento" : "addMovimiento",
-    secret_token: TOKEN,
     ID_Mov: idEdit || Date.now(),
     Fecha: fechaCl,
     Descripcion: desc,
@@ -367,9 +421,7 @@ document.getElementById("movForm").addEventListener("submit", async (e) => {
     triggerCloseModal('modal-movimiento');
     
     document.getElementById("status").innerHTML = `<i class="fa-solid fa-calculator fa-bounce"></i> Recalculando...`;
-    setTimeout(() => {
-      forzarSincronizacion();
-    }, 1800);
+    forzarSincronizacion();
   } catch (e) {}
 });
 
@@ -388,9 +440,9 @@ function renderizarHistorialMovimientos() {
     const matchCat = !fCat || m.Categoria === fCat;
     const matchCta = !fCta || m.Cuenta_Origen === fCta || m.Cuenta_Destino === fCta;
     const matchTxt = !fTxt || 
-                     m.Descripcion.toLowerCase().includes(fTxt) || 
+                     String(m.Descripcion ?? '').toLowerCase().includes(fTxt) || 
                      String(m.Monto).includes(fTxt) || 
-                     m.Categoria.toLowerCase().includes(fTxt);
+                     String(m.Categoria ?? '').toLowerCase().includes(fTxt);
                      
     let matchMes = true;
     if (fMes && m.Fecha) {
@@ -421,24 +473,24 @@ function renderizarHistorialMovimientos() {
     const color = esIngreso ? 'text-emerald-400' : (esTrsf ? 'text-blue-400' : 'text-rose-400');
     const ctaNombre = cuentasGlobales.find(c => c.ID_Cuenta === m.Cuenta_Origen)?.Nombre || m.Cuenta_Origen || "Billetera";
     
-    let detalleCuenta = ctaNombre;
+    let detalleCuenta = esc(ctaNombre);
     if (esTrsf) {
       const ctaDestNombre = cuentasGlobales.find(c => c.ID_Cuenta === m.Cuenta_Destino)?.Nombre || m.Cuenta_Destino || "Destino";
-      detalleCuenta = `${ctaNombre} <i class="fa-solid fa-arrow-right text-[8px] text-slate-500 mx-1"></i> ${ctaDestNombre}`;
+      detalleCuenta = `${esc(ctaNombre)} <i class="fa-solid fa-arrow-right text-[8px] text-slate-500 mx-1"></i> ${esc(ctaDestNombre)}`;
     }
 
     lista.innerHTML += `
     <div class="bg-slate-900 p-4 rounded-2xl border border-slate-850 flex justify-between items-center shadow">
        <div class="flex-1 min-w-0 pr-2">
-         <span class="text-[9px] text-slate-500 font-extrabold uppercase block">${m.Fecha} • ${detalleCuenta}</span>
-         <h4 class="font-extrabold text-sm truncate text-slate-100">${m.Descripcion}</h4>
-         <span class="inline-block text-[9px] bg-slate-950 border border-slate-850 text-slate-400 px-2 py-0.5 rounded-md uppercase font-bold mt-1">${m.Categoria}</span>
+         <span class="text-[9px] text-slate-500 font-extrabold uppercase block">${esc(m.Fecha)} • ${detalleCuenta}</span>
+         <h4 class="font-extrabold text-sm truncate text-slate-100">${esc(m.Descripcion)}</h4>
+         <span class="inline-block text-[9px] bg-slate-950 border border-slate-850 text-slate-400 px-2 py-0.5 rounded-md uppercase font-bold mt-1">${esc(m.Categoria)}</span>
        </div>
        <div class="text-right flex flex-col items-end gap-1.5 shrink-0">
-         <span class="text-sm font-black ${color}">${esIngreso ? '+':'-'} ${m.Moneda==='USD'?'US$':''}${formatMoneda(m.Monto).replace('$','')}</span>
+         <span class="text-sm font-black ${color}">${esIngreso ? '+':'-'} ${formatMoneda(m.Monto, m.Moneda)}</span>
          <div class="flex gap-1">
-           <button onclick="editarMovimientoUI('${m.ID_Mov}')" class="text-[10px] bg-slate-950 border border-slate-800 text-slate-400 px-2 py-1.5 rounded-lg hover:text-emerald-400 hover:bg-emerald-500/10 transition"><i class="fa-solid fa-pencil"></i></button>
-           <button onclick="eliminarMovimientoDrive('${m.ID_Mov}')" class="text-[10px] bg-slate-950 border border-slate-800 text-slate-400 px-2 py-1.5 rounded-lg hover:text-rose-400 hover:bg-rose-500/10 transition"><i class="fa-solid fa-trash"></i></button>
+           <button data-id="${esc(m.ID_Mov)}" onclick="editarMovimientoUI(this.dataset.id)" class="text-[10px] bg-slate-950 border border-slate-800 text-slate-400 px-2 py-1.5 rounded-lg hover:text-emerald-400 hover:bg-emerald-500/10 transition"><i class="fa-solid fa-pencil"></i></button>
+           <button data-id="${esc(m.ID_Mov)}" onclick="eliminarMovimientoDrive(this.dataset.id)" class="text-[10px] bg-slate-950 border border-slate-800 text-slate-400 px-2 py-1.5 rounded-lg hover:text-rose-400 hover:bg-rose-500/10 transition"><i class="fa-solid fa-trash"></i></button>
          </div>
        </div>
     </div>`;
@@ -460,7 +512,7 @@ function editarMovimientoUI(idMov) {
   setTipoMov(mov.Tipo_Mov);
   document.getElementById("movMonto").value = mov.Monto;
   
-  let descLimpia = mov.Descripcion;
+  let descLimpia = String(mov.Descripcion ?? '');
   if (descLimpia.includes(" (En ")) {
     descLimpia = descLimpia.substring(0, descLimpia.indexOf(" (En "));
   }
@@ -490,8 +542,8 @@ async function eliminarMovimientoDrive(id) {
 
   document.getElementById("status").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Eliminando`;
   try {
-    await enviarAGoogle({ action: "deleteMovimiento", secret_token: TOKEN, ID_Mov: id });
-    setTimeout(() => { forzarSincronizacion(); }, 1500);
+    await enviarAGoogle({ action: "deleteMovimiento", ID_Mov: id });
+    forzarSincronizacion();
   } catch (e) {}
 }
 
@@ -502,7 +554,6 @@ document.getElementById("cuentaForm").addEventListener("submit", async (e) => {
   const cupo = Number(document.getElementById("accLimit").value) || 0;
   const payload = {
     action: "addCuenta",
-    secret_token: TOKEN,
     ID_Cuenta: "CTA_" + Date.now(),
     Nombre: document.getElementById("accName").value,
     Tipo: tipo,
@@ -515,7 +566,7 @@ document.getElementById("cuentaForm").addEventListener("submit", async (e) => {
   try {
     await enviarAGoogle(payload);
     triggerCloseModal('modal-cuenta');
-    setTimeout(() => { forzarSincronizacion(); }, 1500);
+    forzarSincronizacion();
   } catch(e) {}
 });
 
@@ -572,9 +623,9 @@ async function agregarNuevaCategoriaDrive() {
   }
   document.getElementById("status").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando`;
   try {
-    await enviarAGoogle({ action: "addCategoria", secret_token: TOKEN, Nombre: nombre });
+    await enviarAGoogle({ action: "addCategoria", Nombre: nombre });
     input.value = "";
-    setTimeout(() => { cargarCategoriasDrive(); }, 1200);
+    forzarSincronizacion();
   } catch(e) {}
 }
 
@@ -584,8 +635,8 @@ async function eliminarCategoriaDrive(nombre) {
 
   document.getElementById("status").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Eliminando`;
   try {
-    await enviarAGoogle({ action: "deleteCategoria", secret_token: TOKEN, Nombre: nombre });
-    setTimeout(() => { cargarCategoriasDrive(); }, 1200);
+    await enviarAGoogle({ action: "deleteCategoria", Nombre: nombre });
+    forzarSincronizacion();
   } catch(e) {}
 }
 
@@ -717,7 +768,7 @@ function procesarAlertasInteligentes() {
 
   if (dashboardGlobal["Saldo_Neto_Real"] !== undefined) {
     const saldoNeto = Number(dashboardGlobal["Saldo_Neto_Real"]) || 0;
-    if (saldoNeto < 50000 && saldoNeto > 0) {
+    if (saldoNeto < 50000) { // incluye saldo negativo
       alertasGeneradas.push({
         tipo: "error", icon: "fa-triangle-exclamation", titulo: "Liquidez Crítica",
         desc: `Tu Saldo Neto es de solo ${formatMoneda(saldoNeto)}. Posiciona prioridades de gasto.`
@@ -733,7 +784,7 @@ function procesarAlertasInteligentes() {
       if (cupoTotal > 0 && (deudAbsoluta / cupoTotal) > 0.65) {
         const pct = Math.round((deudAbsoluta / cupoTotal) * 100);
         alertasGeneradas.push({
-          tipo: "warning", icon: "fa-shield-halved", titulo: `Cupo de ${cta.Nombre} comprometido`,
+          tipo: "warning", icon: "fa-shield-halved", titulo: `Cupo de ${esc(cta.Nombre)} comprometido`,
           desc: `Has utilizado un ${pct}% de tu cupo. Considera limitar deudas de cuotas.`
         });
       }
