@@ -1,13 +1,118 @@
 const API_URL = "https://script.google.com/macros/s/AKfycby1jX08m7dgL5K-P9ItmkkLOeLUrle_fwHkiXdgsMnA3kVkW5MBMFJuYNEkGwylfPa9/exec";
 
-// El token ya NO vive en el repo: se pide una vez y queda guardado solo en este dispositivo.
-function getToken() { return localStorage.getItem('fluxi_token') || ''; }
-function pedirToken(forzar = false) {
-  const actual = getToken();
-  if (actual && !forzar) return actual;
-  const t = (prompt('Clave de acceso de Fluxi:') || '').trim();
-  if (t) localStorage.setItem('fluxi_token', t);
-  return t;
+// ---------- Sesión (usuario + contraseña) ----------
+const getSession = () => localStorage.getItem('fluxi_session') || '';
+const getNombre = () => localStorage.getItem('fluxi_nombre') || '';
+
+function actualizarNombreSesion() {
+  const el = document.getElementById('sesion-nombre');
+  if (el) el.innerText = getNombre() ? '(' + getNombre() + ')' : '';
+}
+
+let _loginPendiente = null;
+
+// Muestra la pantalla de acceso si no hay sesión; devuelve una Promise con la sesión.
+function pedirLogin(mensajeError = '') {
+  if (getSession()) return Promise.resolve(getSession());
+  if (_loginPendiente) return _loginPendiente.promise;
+
+  let resolver;
+  const promise = new Promise((r) => { resolver = r; });
+  _loginPendiente = { promise, resolver };
+
+  const usuario = document.getElementById('loginUsuario');
+  const pass = document.getElementById('loginPassword');
+  const err = document.getElementById('loginError');
+  usuario.value = localStorage.getItem('fluxi_usuario') || '';
+  pass.value = '';
+  pass.type = 'password';
+  document.getElementById('loginToggle').innerText = 'Ver';
+  err.innerText = mensajeError;
+  err.classList.toggle('hidden', !mensajeError);
+  document.getElementById('login-overlay').classList.remove('hidden');
+  setTimeout(() => (usuario.value ? pass : usuario).focus(), 50);
+  return promise;
+}
+
+function cerrarLogin() {
+  document.getElementById('login-overlay').classList.add('hidden');
+  actualizarNombreSesion();
+  if (_loginPendiente) {
+    _loginPendiente.resolver(getSession());
+    _loginPendiente = null;
+  }
+}
+
+async function iniciarSesion(usuario, password) {
+  if (!navigator.onLine) throw new Error('Sin conexión a internet');
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 20000);
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'login', usuario, password }),
+      signal: ctrl.signal
+    });
+    if (!res.ok) throw new Error('Error de red (' + res.status + ')');
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    // Si entra otra persona en este dispositivo, no mostrar datos guardados de la anterior
+    if (localStorage.getItem('fluxi_usuario') !== data.usuario) localStorage.removeItem('fluxi_cache');
+    localStorage.setItem('fluxi_session', data.session);
+    localStorage.setItem('fluxi_usuario', data.usuario);
+    localStorage.setItem('fluxi_nombre', data.nombre || data.usuario);
+    return data;
+  } catch (err) {
+    if (err.name === 'AbortError') throw new Error('Tiempo de espera agotado');
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function cerrarSesion() {
+  ['fluxi_session', 'fluxi_nombre', 'fluxi_cache'].forEach((k) => localStorage.removeItem(k));
+  location.reload();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  actualizarNombreSesion();
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const usuario = document.getElementById('loginUsuario').value.trim();
+    const pass = document.getElementById('loginPassword');
+    const btn = document.getElementById('loginBtn');
+    const err = document.getElementById('loginError');
+    if (!usuario || !pass.value) return;
+    btn.disabled = true;
+    btn.innerText = 'Entrando...';
+    err.classList.add('hidden');
+    try {
+      await iniciarSesion(usuario, pass.value);
+      cerrarLogin();
+    } catch (ex) {
+      err.innerText = ex.message;
+      err.classList.remove('hidden');
+      pass.value = '';
+      pass.focus();
+    } finally {
+      btn.disabled = false;
+      btn.innerText = 'Entrar';
+    }
+  });
+  document.getElementById('loginToggle').addEventListener('click', () => {
+    const input = document.getElementById('loginPassword');
+    const ver = input.type === 'password';
+    input.type = ver ? 'text' : 'password';
+    document.getElementById('loginToggle').innerText = ver ? 'Ocultar' : 'Ver';
+  });
+});
+
+// Nombre de una cuenta por ID; las de otra persona llegan ocultas desde el servidor
+function nombreCuenta(id, porDefecto) {
+  if (id === 'OTRA_PERSONA') return 'Cuenta de otra persona';
+  return cuentasGlobales.find(c => c.ID_Cuenta === id)?.Nombre || id || porDefecto;
 }
 
 // Escapa texto antes de insertarlo en innerHTML (evita XSS desde la planilla)
@@ -16,21 +121,20 @@ const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) =>
 
 // Toda comunicación con el backend pasa por aquí (lecturas y escrituras, con token y timeout)
 async function llamarAPI(payload, timeoutMs = 20000) {
-  const token = pedirToken();
-  if (!token) throw new Error('Falta la clave de acceso');
+  const session = await pedirLogin();
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ ...payload, secret_token: token }),
+      body: JSON.stringify({ ...payload, session }),
       signal: ctrl.signal
     });
     if (!res.ok) throw new Error('Error de red (' + res.status + ')');
     const data = await res.json();
     if (data && data.error) {
-      if (data.error === 'No autorizado') localStorage.removeItem('fluxi_token');
+      if (data.error === 'No autorizado') localStorage.removeItem('fluxi_session');
       throw new Error(data.error);
     }
     return data;
@@ -83,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
   inicializarFechaHoy();
   try {
     const guardado = localStorage.getItem('fluxi_cache');
-    if (guardado) aplicarTodo(JSON.parse(guardado));
+    if (guardado && getSession()) aplicarTodo(JSON.parse(guardado));
   } catch (e) {}
   forzarSincronizacion();
 
@@ -264,6 +368,12 @@ async function forzarSincronizacion() {
     console.error(e);
   }
 
+  if (errorCarga && msgError === 'No autorizado') {
+    document.getElementById("status").innerHTML = `<i class="fa-solid fa-lock text-rose-400"></i> Sin acceso`;
+    pedirLogin('Tu sesión expiró. Ingresa de nuevo.').then(() => forzarSincronizacion());
+    return;
+  }
+
   if (errorCarga) {
     document.getElementById("status").innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-500"></i> Parcial`;
     document.getElementById("api-error-banner").classList.remove("hidden");
@@ -321,7 +431,7 @@ function aplicarCuentas(cuentas) {
           </div>
           <div>
             <h3 class="font-extrabold text-sm text-white">${esc(c.Nombre)}</h3>
-            <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${badgeColor}">${esc(c.Tipo)}</span>
+            <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${badgeColor}">${esc(c.Tipo)}</span>${c.Propietario === 'Compartida' ? '<span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 ml-1"><i class="fa-solid fa-user-group mr-1"></i>Compartida</span>' : ''}
           </div>
         </div>
         <div class="text-right">
@@ -471,11 +581,11 @@ function renderizarHistorialMovimientos() {
     const esIngreso = m.Tipo_Mov === 'Ingreso';
     const esTrsf = m.Tipo_Mov === 'Transferencia';
     const color = esIngreso ? 'text-emerald-400' : (esTrsf ? 'text-blue-400' : 'text-rose-400');
-    const ctaNombre = cuentasGlobales.find(c => c.ID_Cuenta === m.Cuenta_Origen)?.Nombre || m.Cuenta_Origen || "Billetera";
+    const ctaNombre = nombreCuenta(m.Cuenta_Origen, "Billetera");
     
     let detalleCuenta = esc(ctaNombre);
     if (esTrsf) {
-      const ctaDestNombre = cuentasGlobales.find(c => c.ID_Cuenta === m.Cuenta_Destino)?.Nombre || m.Cuenta_Destino || "Destino";
+      const ctaDestNombre = nombreCuenta(m.Cuenta_Destino, "Destino");
       detalleCuenta = `${esc(ctaNombre)} <i class="fa-solid fa-arrow-right text-[8px] text-slate-500 mx-1"></i> ${esc(ctaDestNombre)}`;
     }
 
@@ -561,7 +671,8 @@ document.getElementById("cuentaForm").addEventListener("submit", async (e) => {
     Moneda: document.getElementById("accCurrency").value,
     Dia_Corte: 20,
     Dia_Pago: 5,
-    Saldo_Inicial: tipo === 'Credito' ? 0 : cupo
+    Saldo_Inicial: tipo === 'Credito' ? 0 : cupo,
+    Propietario: document.getElementById("accOwner").value
   };
   try {
     await enviarAGoogle(payload);
