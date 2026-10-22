@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fluxi-cache-v1.8.0';
+const CACHE_NAME = 'fluxi-cache-v1.10.0';
 
 // Archivos locales de la app (subir la versión arriba cada vez que publiques cambios)
 const ASSETS_TO_CACHE = [
