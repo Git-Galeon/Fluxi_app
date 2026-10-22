@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbwNTc4kk61h_e4peFq_PFtFMd9v9WCk2wSn6AfF6IDLucloo-5trVAFR3Afd_5wdE2d/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzLGGfpNA-0RBfwHnagtXCNhSIPzAeipYxw_BQzOw0R3soqvlYQuwpaW7xOWROYEAoL/exec";
 
 // ---------- Sesión (usuario + contraseña) ----------
 const getSession = () => localStorage.getItem('fluxi_session') || '';
